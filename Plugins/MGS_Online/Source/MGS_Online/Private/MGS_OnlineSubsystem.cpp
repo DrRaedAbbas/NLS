@@ -4,11 +4,12 @@
 #include "MGS_OnlineSubsystem.h"
 #include "MGSFunctionLibrary.h"
 #include "OnlineSessionSettings.h"
-#include "Interfaces/OnlineIdentityInterface.h"
+#include "OnlineSubsystemUtils.h"
 
 #include "OnlineSubsystem.h"
 
 UMGS_OnlineSubsystem::UMGS_OnlineSubsystem():
+OnLoginCompleteDelegate(FOnLoginCompleteDelegate::CreateUObject(this, &ThisClass::OnLoginWithEOSCompleted)),
 CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionCompleted)),
 FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionsCompleted)),
 JoinSessionCompleteDelegate(FOnJoinSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnJoinSessionCompleted)),
@@ -25,38 +26,55 @@ DestroySessionCompleteDelegate(FOnDestroySessionCompleteDelegate::CreateUObject(
 //***********************LOGIN*******************
 void UMGS_OnlineSubsystem::LoginWithEOS(FString ID, FString Token, FString LoginType)
 {
-	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
-	if (Subsystem)
+	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemRef)
 	{
-		IOnlineIdentityPtr IdentityPtr = Subsystem->GetIdentityInterface();
-		if (IdentityPtr)
-		{
-			FOnlineAccountCredentials AccountDetails;
-			AccountDetails.Id = ID;
-			AccountDetails.Token = Token;
-			AccountDetails.Type = LoginType;
-			IdentityPtr->OnLoginCompleteDelegates->AddUObject(this, &ThisClass::OnLoginWithEOS);
-			IdentityPtr->Login(0, AccountDetails);
-		}
+		IdentityPtr = SubsystemRef->GetIdentityInterface();
+		FOnlineAccountCredentials Credentials;
+		Credentials.Id = "";
+		Credentials.Token = "";
+		Credentials.Type = "accountportal";
+		IdentityPtr->OnLoginCompleteDelegates->AddUObject(this, &ThisClass::OnLoginWithEOSCompleted);
+		IdentityPtr->Login(0, Credentials);
 	}
+	//IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	//if (Subsystem)
+	//{
+	//	IdentityPtr = Subsystem->GetIdentityInterface();
+	//	if (IdentityPtr)
+	//	{
+	//		
+	//		FOnlineAccountCredentials AccountCredentials;
+	//		AccountCredentials.Id = ID;
+	//		AccountCredentials.Token = Token;
+	//		AccountCredentials.Type = LoginType;
+	//		//IdentityPtr->OnLoginCompleteDelegates->AddUObject(this, &ThisClass::OnLoginWithEOSCompleted);
+	//		LoginHandle = IdentityPtr->AddOnLoginCompleteDelegate_Handle(0, OnLoginCompleteDelegate);
+	//		if (!IdentityPtr->Login(0, AccountCredentials))
+	//		{
+	//			IdentityPtr->ClearOnLoginCompleteDelegate_Handle(0, LoginHandle);
+	//			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Login Failed!")), FColor::Red);
+	//		}
+	//	}
+	//}
 }
-void UMGS_OnlineSubsystem::OnLoginWithEOS(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserID,
+void UMGS_OnlineSubsystem::OnLoginWithEOSCompleted(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserID,
 	const FString& Error)
 {
-	if (bWasSuccessful)
-	{
-		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Login Success")), FColor::Green);
-	}
+	if (bWasSuccessful) UE_LOG(LogTemp, Warning, TEXT("Login Success"));
+	if (!bWasSuccessful) UE_LOG(LogTemp, Error, TEXT("Login failed because %s"), *Error);
+	/*if(IdentityPtr) IdentityPtr->ClearOnLoginCompleteDelegate_Handle(0, LoginHandle);
+	if (bWasSuccessful) MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Login Success")), FColor::Green);
 	else
 	{
 		MGSFunctionLibrary->DisplayDebugMessage(FString(Error), FColor::Red);
-	}
+	}*/
 }
 
 void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType, FString LevelPath)
 {
 	SessionSettings = MakeShareable(new FOnlineSessionSettings());
-	SessionSettings->bIsLANMatch = false;  // IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+	SessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
 	SessionSettings->NumPublicConnections = MaxPlayers;
 	SessionSettings->bAllowJoinInProgress = true;
 	SessionSettings->bAllowJoinViaPresence = true;
@@ -64,8 +82,8 @@ void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType, 
 	SessionSettings->bUsesPresence = true;
 	SessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	SessionSettings->BuildUniqueId = 1;
-	SessionSettings->bUseLobbiesIfAvailable = true;
-	SessionSettings->bUseLobbiesVoiceChatIfAvailable = true;
+	SessionSettings->bUseLobbiesIfAvailable = false;
+	SessionSettings->bUseLobbiesVoiceChatIfAvailable = false;
 }
 
 //*******************Creating Session**********************

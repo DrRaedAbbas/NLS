@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Interfaces/OnlineIdentityInterface.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
 
@@ -39,6 +40,7 @@ public:
 	void DestroyGameSession();
 
 	//Custom delegates to broadcast
+	
 	FMGSCreateSessionCompleted MGSCreateSessionCompleted;
 	FMGSFindSessionsCompleted MGSFindSessionsCompleted;
 	FMGSJoinSessionCompleted MGSJoinSessionCompleted;
@@ -47,8 +49,7 @@ public:
 
 protected:
 	//callbacks for subsystem's delegates
-	void OnLoginWithEOS(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserID, const FString& Error);
-
+	void OnLoginWithEOSCompleted(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserID, const FString& Error);
 	void OnCreateSessionCompleted(FName SessionName, bool bWasSuccessful);
 	void OnFindSessionsCompleted(bool bWasSuccessful);
 	void OnJoinSessionCompleted(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
@@ -60,8 +61,11 @@ private:
 	TSharedPtr<FOnlineSessionSettings> SessionSettings;
 	class UMGSFunctionLibrary* MGSFunctionLibrary;
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
+	IOnlineIdentityPtr IdentityPtr;
 
 	//To bind subsystem callbacks
+	FOnLoginCompleteDelegate OnLoginCompleteDelegate;
+	FDelegateHandle LoginHandle;
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
 	FDelegateHandle CreateSessionHandle;
 	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
