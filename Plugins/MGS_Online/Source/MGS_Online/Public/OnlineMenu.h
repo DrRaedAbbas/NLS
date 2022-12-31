@@ -41,12 +41,6 @@ public:
 	EGameType GameType = EGameType::FreeForAll;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
 	FString LevelPath = FString("/Game/NLS/Maps/Lobby");
-	//UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "MGS|Lobby Settiongs")
-	//FName GameName = FName("My NLS Game");
-	//UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "MGS|Lobby Settiongs")
-	//bool IsDedicated = false;
-	//UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "MGS|Lobby Settiongs")
-	//bool IsLAN = true;
 
 	UFUNCTION()
 	void HostButtonClicked();
@@ -66,6 +60,7 @@ private:
 protected:
 	virtual bool Initialize() override;
 	virtual void NativeDestruct() override;
+
 	//Custom delegates callbacks
 	UFUNCTION()
 	void OnCreateSession(bool bWasSuccessful);

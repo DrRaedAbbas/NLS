@@ -2,6 +2,8 @@
 
 
 #include "MGS_OnlineSubsystem.h"
+
+//#include "LobbyGameMode.h"
 #include "MGSFunctionLibrary.h"
 #include "OnlineSessionSettings.h"
 
@@ -21,7 +23,7 @@ DestroySessionCompleteDelegate(FOnDestroySessionCompleteDelegate::CreateUObject(
 	}
 }
 
-void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType)
+void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType, FString LevelPath)
 {
 	SessionSettings = MakeShareable(new FOnlineSessionSettings());
 	SessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
@@ -34,6 +36,12 @@ void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType)
 	SessionSettings->BuildUniqueId = 1;
 	SessionSettings->bUseLobbiesIfAvailable = true;
 	SessionSettings->bUseLobbiesVoiceChatIfAvailable = true;
+
+	/*if (ALobbyGameMode* LobbyGameMode = Cast<ALobbyGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		LobbyGameMode->MaxPlayersAllowed = MaxPlayers;
+		LobbyGameMode->LevelPath = LevelPath;
+	}*/
 }
 
 //*******************Creating Session**********************

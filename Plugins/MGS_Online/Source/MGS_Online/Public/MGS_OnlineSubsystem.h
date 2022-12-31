@@ -26,7 +26,7 @@ public:
 	UMGS_OnlineSubsystem();
 
 	UFUNCTION(BlueprintCallable)
-	void SetGameSettings(int32 MaxPlayers, FString MatchType);
+	void SetGameSettings(int32 MaxPlayers, FString MatchType, FString LevelPath);
 
 	//Functions for menus
 	void CreateGameSession(int32 MaxPlayers, FString MatchType);
