@@ -27,7 +27,8 @@ public class MGS_Online : ModuleRules
 			{
 				"Core",
 				"OnlineSubsystem",
-				"OnlineSubsystemSteam",
+				"OnlineSubsystemEOS",
+				"OnlineSubsystemUtils",
 				"UMG",
 				"Slate",
 				"SlateCore"

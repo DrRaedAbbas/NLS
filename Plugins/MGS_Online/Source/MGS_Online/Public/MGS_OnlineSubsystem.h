@@ -29,6 +29,9 @@ public:
 	void SetGameSettings(int32 MaxPlayers, FString MatchType, FString LevelPath);
 
 	//Functions for menus
+	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
+	void LoginWithEOS(FString ID, FString Token, FString LoginType);
+
 	void CreateGameSession(int32 MaxPlayers, FString MatchType);
 	void FindGameSessions(int32 MaxSearchResults = 10000);
 	void JoinGameSession(const FOnlineSessionSearchResult& SessionSearchResult);
@@ -44,6 +47,8 @@ public:
 
 protected:
 	//callbacks for subsystem's delegates
+	void OnLoginWithEOS(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserID, const FString& Error);
+
 	void OnCreateSessionCompleted(FName SessionName, bool bWasSuccessful);
 	void OnFindSessionsCompleted(bool bWasSuccessful);
 	void OnJoinSessionCompleted(FName SessionName, EOnJoinSessionCompleteResult::Type Result);

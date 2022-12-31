@@ -2,10 +2,9 @@
 
 
 #include "MGS_OnlineSubsystem.h"
-
-//#include "LobbyGameMode.h"
 #include "MGSFunctionLibrary.h"
 #include "OnlineSessionSettings.h"
+#include "Interfaces/OnlineIdentityInterface.h"
 
 #include "OnlineSubsystem.h"
 
@@ -23,10 +22,41 @@ DestroySessionCompleteDelegate(FOnDestroySessionCompleteDelegate::CreateUObject(
 	}
 }
 
+//***********************LOGIN*******************
+void UMGS_OnlineSubsystem::LoginWithEOS(FString ID, FString Token, FString LoginType)
+{
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (Subsystem)
+	{
+		IOnlineIdentityPtr IdentityPtr = Subsystem->GetIdentityInterface();
+		if (IdentityPtr)
+		{
+			FOnlineAccountCredentials AccountDetails;
+			AccountDetails.Id = ID;
+			AccountDetails.Token = Token;
+			AccountDetails.Type = LoginType;
+			IdentityPtr->OnLoginCompleteDelegates->AddUObject(this, &ThisClass::OnLoginWithEOS);
+			IdentityPtr->Login(0, AccountDetails);
+		}
+	}
+}
+void UMGS_OnlineSubsystem::OnLoginWithEOS(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserID,
+	const FString& Error)
+{
+	if (bWasSuccessful)
+	{
+		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Login Success")), FColor::Green);
+	}
+	else
+	{
+		MGSFunctionLibrary->DisplayDebugMessage(FString(Error), FColor::Red);
+	}
+}
+
 void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType, FString LevelPath)
 {
 	SessionSettings = MakeShareable(new FOnlineSessionSettings());
-	SessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+	SessionSettings->bIsLANMatch = false;  // IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
 	SessionSettings->NumPublicConnections = MaxPlayers;
 	SessionSettings->bAllowJoinInProgress = true;
 	SessionSettings->bAllowJoinViaPresence = true;
@@ -36,12 +66,6 @@ void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType, 
 	SessionSettings->BuildUniqueId = 1;
 	SessionSettings->bUseLobbiesIfAvailable = true;
 	SessionSettings->bUseLobbiesVoiceChatIfAvailable = true;
-
-	/*if (ALobbyGameMode* LobbyGameMode = Cast<ALobbyGameMode>(GetWorld()->GetAuthGameMode()))
-	{
-		LobbyGameMode->MaxPlayersAllowed = MaxPlayers;
-		LobbyGameMode->LevelPath = LevelPath;
-	}*/
 }
 
 //*******************Creating Session**********************

@@ -29,26 +29,6 @@
 				"Mac",
 				"Linux"
 			]
-		},
-		{
-			"Name": "EOSShared",
-			"Enabled": false
-		},
-		{
-			"Name": "EOSVoiceChat",
-			"Enabled": false
-		},
-		{
-			"Name": "OnlineServicesEOS",
-			"Enabled": false
-		},
-		{
-			"Name": "OnlineSubsystemEOS",
-			"Enabled": false
-		},
-		{
-			"Name": "OnlineServicesNull",
-			"Enabled": true
 		}
 	]
 }
