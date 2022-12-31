@@ -86,9 +86,34 @@ void UOnlineMenu::UnloadMenu()
 void UOnlineMenu::HostButtonClicked()
 {
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Host button clicked")), FColor::Cyan);
+	switch (GameType)
+	{
+		case EGameType::FreeForAll:
+			{
+				MatchType = FString("FreeForAll");
+				break;
+			}
+	case EGameType::DeathMatch:
+			{
+				MatchType = FString("FreeForAll");
+				break;
+			}
+	case EGameType::TeamDeathMatch:
+			{
+				MatchType = FString("FreeForAll");
+				break;
+			}
+	case EGameType::NONE:
+			{
+				MatchType = FString("FreeForAll");
+				break;
+			}
+	}
+	
 	if (MGS_OnlineSubsystem)
 	{
-		MGS_OnlineSubsystem->CreateGameSession(MaxPlayers, GameType);
+		MGS_OnlineSubsystem->SetGameSettings(MaxPlayers, MatchType);
+		MGS_OnlineSubsystem->CreateGameSession(MaxPlayers, MatchType);
 	}
 }
 
@@ -96,7 +121,12 @@ void UOnlineMenu::JoingButtonClicked()
 {
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Join button clicked")), FColor::Cyan);
 	
-	if (!SessionSearchResult.IsValid()) return;
+	if (!SessionSearchResult.IsValid())
+	{
+		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("No Games. Please try Find Game")), FColor::Red);
+		return;
+	}
+
 	if(MGS_OnlineSubsystem) 
 	{
 		MGS_OnlineSubsystem->JoinGameSession(SessionSearchResult);
@@ -147,10 +177,12 @@ void UOnlineMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& Sessi
 
 		FString FoundGameType;
 		Result.Session.SessionSettings.Get(FName("MatchType"), FoundGameType);
-		if (FoundGameType == GameType)
+		
+		if (FoundGameType == MatchType)
 		{
 			SessionSearchResult = Result;
 			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Game Session Found")), FColor::Green);
+			
 			break;
 		}
 	}

@@ -13,7 +13,8 @@ enum class EButtonType : uint8
 	NONE,
 	HostButton,
 	JoinButton,
-	FindButton
+	FindButton,
+	QuitButton
 };
 
 UCLASS()
@@ -22,7 +23,7 @@ class MGS_ONLINE_API UMenuButton : public UButton
 	GENERATED_BODY()
 
 	UMenuButton();
-
+	
 protected:
 #if WITH_EDITOR
 	virtual const FText GetPaletteCategory() override;

@@ -2,15 +2,16 @@
 
 #include "MenuButton.h"
 #include "OnlineMenu.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 #define LOCTEXT_NAMESPACE "UMG"
 
 UMenuButton::UMenuButton()
 {
-	static ConstructorHelpers::FObjectFinder<USlateWidgetStyleAsset> CustomButtonStyle(TEXT("/Game/MGS/UI/Buttons/WS_Button"));
+	/*static ConstructorHelpers::FObjectFinder<USlateWidgetStyleAsset> CustomButtonStyle(TEXT("/Game/MGS/UI/Buttons/WS_Button"));
 	SButton::FArguments ButtonDefaults;
 	ButtonDefaults.ButtonStyle(CustomButtonStyle.Object);
-	WidgetStyle = *ButtonDefaults._ButtonStyle;
+	WidgetStyle = *ButtonDefaults._ButtonStyle;*/
 
 	OnClicked.AddDynamic(this, &ThisClass::OnButtonClicked);
 }
@@ -59,7 +60,13 @@ void UMenuButton::OnButtonClicked()
 			MainMenu->JoingButtonClicked();
 			break;
 		}
-		default:
+		case EButtonType::QuitButton:
+		{
+			UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, false);
+			break;
+		}
+			
+	default:
 		{
 			break;
 		}

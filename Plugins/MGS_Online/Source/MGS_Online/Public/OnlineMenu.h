@@ -9,6 +9,15 @@
 
 #include "OnlineMenu.generated.h"
 
+UENUM(BlueprintType)
+enum class EGameType : uint8
+{
+	NONE,
+	FreeForAll UMETA(DisplayName = "Free For All"),
+	DeathMatch UMETA(DisplayName = "Death Match"),
+	TeamDeathMatch UMETA(DisplayName = "Team Death Match")
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnButtonReady, bool, bButtonRead)
 
 UCLASS()
@@ -24,12 +33,20 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UnloadMenu();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Online Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
 	int32 MaxPlayers = 4;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Online Settings")
-	FString GameType = FString("FreeForAll");
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Online Settings")
-	FString LevelPath = FString("/Game/MGS/Maps/Lobby");
+	UPROPERTY()
+	FString MatchType = FString("FreeForAll");
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
+	EGameType GameType = EGameType::FreeForAll;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
+	FString LevelPath = FString("/Game/NLS/Maps/Lobby");
+	//UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "MGS|Lobby Settiongs")
+	//FName GameName = FName("My NLS Game");
+	//UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "MGS|Lobby Settiongs")
+	//bool IsDedicated = false;
+	//UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "MGS|Lobby Settiongs")
+	//bool IsLAN = true;
 
 	UFUNCTION()
 	void HostButtonClicked();

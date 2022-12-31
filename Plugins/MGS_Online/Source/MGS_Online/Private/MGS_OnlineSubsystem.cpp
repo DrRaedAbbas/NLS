@@ -21,6 +21,21 @@ DestroySessionCompleteDelegate(FOnDestroySessionCompleteDelegate::CreateUObject(
 	}
 }
 
+void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType)
+{
+	SessionSettings = MakeShareable(new FOnlineSessionSettings());
+	SessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+	SessionSettings->NumPublicConnections = MaxPlayers;
+	SessionSettings->bAllowJoinInProgress = true;
+	SessionSettings->bAllowJoinViaPresence = true;
+	SessionSettings->bShouldAdvertise = true;
+	SessionSettings->bUsesPresence = true;
+	SessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings->BuildUniqueId = 1;
+	SessionSettings->bUseLobbiesIfAvailable = true;
+	SessionSettings->bUseLobbiesVoiceChatIfAvailable = true;
+}
+
 //*******************Creating Session**********************
 void UMGS_OnlineSubsystem::CreateGameSession(int32 MaxPlayers, FString MatchType)
 {
@@ -34,12 +49,11 @@ void UMGS_OnlineSubsystem::CreateGameSession(int32 MaxPlayers, FString MatchType
 
 		DestroyGameSession();
 	}
-		//SessionInterface->DestroySession(NAME_GameSession);
 
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Creating Game Session")), FColor::Blue);
 
 	CreateSessionHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
-	SessionSettings = MakeShareable(new FOnlineSessionSettings());
+	/*SessionSettings = MakeShareable(new FOnlineSessionSettings());
 	SessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
 	SessionSettings->NumPublicConnections = MaxPlayers;
 	SessionSettings->bAllowJoinInProgress = true;
@@ -49,8 +63,8 @@ void UMGS_OnlineSubsystem::CreateGameSession(int32 MaxPlayers, FString MatchType
 	SessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	SessionSettings->BuildUniqueId = 1;
 	SessionSettings->bUseLobbiesIfAvailable = true;
-	SessionSettings->bUseLobbiesVoiceChatIfAvailable = true;
-
+	SessionSettings->bUseLobbiesVoiceChatIfAvailable = true;*/
+	
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	const FUniqueNetId& LocalPlayerID = *LocalPlayer->GetPreferredUniqueNetId();
 

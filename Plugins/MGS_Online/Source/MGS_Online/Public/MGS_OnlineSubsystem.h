@@ -25,6 +25,9 @@ class MGS_ONLINE_API UMGS_OnlineSubsystem : public UGameInstanceSubsystem
 public:
 	UMGS_OnlineSubsystem();
 
+	UFUNCTION(BlueprintCallable)
+	void SetGameSettings(int32 MaxPlayers, FString MatchType);
+
 	//Functions for menus
 	void CreateGameSession(int32 MaxPlayers, FString MatchType);
 	void FindGameSessions(int32 MaxSearchResults = 10000);
