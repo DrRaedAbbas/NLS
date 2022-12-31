@@ -1,0 +1,54 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.1",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "NLS",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		},
+		{
+			"Name": "Bridge",
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
+		},
+		{
+			"Name": "EOSShared",
+			"Enabled": false
+		},
+		{
+			"Name": "EOSVoiceChat",
+			"Enabled": false
+		},
+		{
+			"Name": "OnlineServicesEOS",
+			"Enabled": false
+		},
+		{
+			"Name": "OnlineSubsystemEOS",
+			"Enabled": false
+		},
+		{
+			"Name": "OnlineServicesNull",
+			"Enabled": true
+		}
+	]
+}
