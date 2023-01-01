@@ -29,6 +29,7 @@ public class MGS_Online : ModuleRules
 				"OnlineSubsystem",
 				"OnlineSubsystemEOS",
 				"OnlineSubsystemUtils",
+				"VoiceChat",
 				"UMG",
 				"Slate",
 				"SlateCore"

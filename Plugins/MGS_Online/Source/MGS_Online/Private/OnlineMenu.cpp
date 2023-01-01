@@ -112,7 +112,7 @@ void UOnlineMenu::HostButtonClicked()
 	
 	if (MGS_OnlineSubsystem)
 	{
-		MGS_OnlineSubsystem->SetGameSettings(MaxPlayers, MatchType, LevelPath);
+		MGS_OnlineSubsystem->SetGameSettings(MaxPlayers, MatchType/*, LevelPath*/, bIsDedicatedServer);
 		MGS_OnlineSubsystem->CreateGameSession(MaxPlayers, MatchType);
 	}
 }

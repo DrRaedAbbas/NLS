@@ -41,6 +41,8 @@ public:
 	EGameType GameType = EGameType::FreeForAll;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
 	FString LevelPath = FString("/Game/NLS/Maps/Lobby");
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
+	bool bIsDedicatedServer = false;
 
 	UFUNCTION()
 	void HostButtonClicked();
