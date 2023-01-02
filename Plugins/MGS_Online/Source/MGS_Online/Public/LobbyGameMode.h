@@ -24,7 +24,5 @@ public:
 
 protected:
 	class UMGSFunctionLibrary* MGSFunctionLibrary;
-
 	
-
 };

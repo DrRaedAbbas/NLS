@@ -29,37 +29,60 @@ class MGS_ONLINE_API UMGS_OnlineSubsystem : public UGameInstanceSubsystem
 public:
 	UMGS_OnlineSubsystem();
 
+	/**
+	 * Set the session settings. The majority of these settings are set automatically but they will be exposed to blueprint in future releases.
+	 * @param MaxPlayers The maximum allowed players to join the session.
+	 * @param MatchType FreeForAll, DeathMatch or TeamDeathMatch match type (also known as game mode).
+	 * @param bIsDedicatedServer should generally be set to false unless a Dedicated server is running.
+	 */
 	UFUNCTION(BlueprintCallable)
-	void SetGameSettings(int32 MaxPlayers, FString MatchType/*, FString LevelPath*/, bool bIsDedicatedServer);
+	void SetGameSettings(int32 MaxPlayers, FString MatchType, bool bIsDedicatedServer);
+	/**
+	 * Returns the local player name.
+	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "MGS|Online")
 	FString GetCurrentPlayerName();
+	/**
+	 * Returns player's status.
+	 * @param IsLoggedIn Is player logged in into EOS.
+	 * @param OutStatus returns the actual status as a string text.
+	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "MGS|Online")
 	void GetPlayerStatus(bool& IsLoggedIn, FString& OutStatus);
 	UFUNCTION()
 	bool IsPlayerLoggedIn();
 
 	//Functions for menus
+
+	/**
+	 * To login using EOS.
+	 * @param ID The login ID if known. This should be blank if accountportal type is used!.
+	 * @param Token The login token, or password, if known, This should be blank if accountportal type is used!.
+	 * @param LoginType is the method used to log in. accountportal is set by default.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
 	void LoginWithEOS(FString ID, FString Token, FString LoginType);
+	/**
+	 * Create a new game session. Note this is not to start a game or travel to a new map(level).
+	 * @param MaxPlayers The maximum allowed players to join the session.
+	 * @param MatchType FreeForAll, DeathMatch or TeamDeathMatch match type (also known as game mode).
+	 */
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
 	void CreateGameSession(int32 MaxPlayers, FString MatchType);
+	/**
+	 * Find all available game sessions.
+	 * @param MaxSearchResults The maximum number of search results. Set to a high value during testing/debug.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
 	void FindGameSessions(int32 MaxSearchResults = 10000);
-	//UFUNCTION(BlueprintCallable, Category = "MGS|Online")
 	void JoinGameSession(const FOnlineSessionSearchResult& SessionSearchResult);
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
 	void StartGameSession();
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
 	void DestroyGameSession();
-	
 
 	UPROPERTY(BlueprintReadOnly, Category="MGS||Online")
 	TArray<FBlueprintSessionResult> SessionSearchResults;
-
-	/*UPROPERTY(BlueprintReadOnly, Category = "MGS||Online")
-	TArray<FString>InputDeviceNames;
-	UPROPERTY(BlueprintReadOnly, Category = "MGS||Online")
-	TArray<FString>OutputDeviceNames;*/
 
 	//Custom delegates to broadcast
 	UPROPERTY(BlueprintAssignable, Category = "MGS||Online||Delegates")
@@ -90,6 +113,15 @@ public:
 	void LoginEOSCompleted(bool bSuccess);
 	UFUNCTION()
 	void LoginEOSvChatCompleted(bool bSuccess);
+
+	UPROPERTY(BlueprintReadWrite, Category = "MGS|Online|vChat")
+	TArray<FString> InputDevices;
+	UPROPERTY(BlueprintReadWrite, Category = "MGS|Online|vChat")
+	TArray<FString> OutputDevices;
+	//UPROPERTY(BlueprintReadWrite, Category = "MGS|Online|vChat")
+	TArray<FVoiceChatDeviceInfo> InputDeviceInfos;
+	//UPROPERTY(BlueprintReadWrite, Category = "MGS|Online|vChat")
+	TArray<FVoiceChatDeviceInfo> OutputDeviceInfos;
 
 protected:
 	//callbacks for subsystem's delegates

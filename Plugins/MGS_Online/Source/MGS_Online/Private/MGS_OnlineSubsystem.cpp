@@ -5,7 +5,7 @@
 #include "MGSFunctionLibrary.h"
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystemUtils.h"
-
+#include "IOnlineSubsystemEOS.h"
 #include "OnlineSubsystem.h"
 
 UMGS_OnlineSubsystem::UMGS_OnlineSubsystem():
@@ -24,7 +24,7 @@ DestroySessionCompleteDelegate(FOnDestroySessionCompleteDelegate::CreateUObject(
 	}
 }
 
-void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType/*, FString LevelPath*/, bool bIsDedicatedServer)
+void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType, bool bIsDedicatedServer)
 {
 	SessionSettings = MakeShareable(new FOnlineSessionSettings());
 	SessionSettings->NumPublicConnections = MaxPlayers;
@@ -34,8 +34,8 @@ void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType/*
 	SessionSettings->bAllowJoinViaPresence = true;
 	SessionSettings->bShouldAdvertise = true;
 	SessionSettings->bUsesPresence = true;
-	SessionSettings->bUseLobbiesIfAvailable = false;
-	SessionSettings->bUseLobbiesVoiceChatIfAvailable = false;
+	SessionSettings->bUseLobbiesIfAvailable = IsPlayerLoggedIn() ? true : false;
+	SessionSettings->bUseLobbiesVoiceChatIfAvailable = IsPlayerLoggedIn() ? true : false;
 	SessionSettings->bAllowInvites = true;
 	SessionSettings->BuildUniqueId = 1;
 	SessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
@@ -133,8 +133,33 @@ void UMGS_OnlineSubsystem::OnLoginWithEOSCompleted(int32 LocalUserNum, bool bWas
 	}
 	EOSLoginCompleted.Broadcast(bWasSuccessful);
 }
+
 void UMGS_OnlineSubsystem::LoginEOSCompleted(bool bSuccess)
 {
+	if (!bSuccess)
+	{
+		UE_LOG(LogTemp, Error, TEXT("EOS Login completed but FAILED!!!!!!"));
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("EOS Login completed Success :) "));
+
+	IOnlineSubsystem* SubsystemEOS = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemEOS)
+	{
+		IVoiceChat* vChatRef = IVoiceChat::Get();
+		if (vChatRef) vChatUser = vChatRef->CreateUser();
+	}
+
+	if (vChatUser)
+	{
+		FString vChatUserName = vChatUser->GetLoggedInPlayerName();
+		UE_LOG(LogTemp, Warning, TEXT("vChat User: &s"), *vChatUserName);
+
+		/*vChatUserID = IdentityPtr->GetUniquePlayerId(0);
+		FPlatformUserId PlatformUserID = IdentityPtr->GetPlatformUserIdFromUniqueNetId(*vChatUserID);
+		vChatUser->Login(PlatformUserID, vChatUserID->ToString(), TEXT(""), OnChatLoginCompleteDelegate);*/
+	}
 }
 
 //*******************Creating Session**********************
@@ -154,6 +179,7 @@ void UMGS_OnlineSubsystem::CreateGameSession(int32 MaxPlayers, FString MatchType
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Creating Game Session")), FColor::Blue);
 
 	CreateSessionHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
+	SetGameSettings(MaxPlayers, MatchType, SessionSettings->bIsDedicated);
 	/*SessionSettings = MakeShareable(new FOnlineSessionSettings());
 	SessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
 	SessionSettings->NumPublicConnections = MaxPlayers;
@@ -195,6 +221,7 @@ void UMGS_OnlineSubsystem::FindGameSessions(int32 MaxSearchResults)
 	SessionSearch->MaxSearchResults = MaxSearchResults;
 	SessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+	SessionSearch->QuerySettings.Set(SEARCH_LOBBIES, true, EOnlineComparisonOp::Equals);
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	if(!SessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef()))
 	{
@@ -294,39 +321,49 @@ void UMGS_OnlineSubsystem::OnDestroySessionCompleted(FName SessionName, bool bWa
 //*******************Voice Chat***************************
 void UMGS_OnlineSubsystem::LoginWithEOSvChat()
 {
-	EOSvChatLoginCompleted.AddDynamic(this, &ThisClass::LoginEOSvChatCompleted);
-	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
-	if (SubsystemRef)
-	{
-		IdentityPtr = SubsystemRef->GetIdentityInterface();
-		if (!IdentityPtr.IsValid())
-		{
-			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Identity Pointer Not valid!")), FColor::Red);
-			EOSvChatLoginCompleted.Broadcast(false);
-			return;
-		}
-		if (!IsPlayerLoggedIn())
-		{
-			EOSvChatLoginCompleted.Broadcast(false);
-			return;
-		}
-		IVoiceChat* vChatRef = IVoiceChat::Get();
-		if(vChatRef) vChatUser = vChatRef->CreateUser();
-		if (vChatUser == nullptr)
-		{
-			EOSvChatLoginCompleted.Broadcast(false);
-			return;
-		}
-		/*TSharedPtr<const FUniqueNetId>*/ vChatUserID = IdentityPtr->GetUniquePlayerId(0);
-		FPlatformUserId PlatformUserID = IdentityPtr->GetPlatformUserIdFromUniqueNetId(*vChatUserID);
-		vChatUser->Login(PlatformUserID, vChatUserID->ToString(), TEXT(""), OnChatLoginCompleteDelegate);
-	}
+	//EOSvChatLoginCompleted.AddDynamic(this, &ThisClass::LoginEOSvChatCompleted);
+	//IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	//if (SubsystemRef)
+	//{
+	//	IdentityPtr = SubsystemRef->GetIdentityInterface();
+	//	if (!IdentityPtr.IsValid())
+	//	{
+	//		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Identity Pointer Not valid!")), FColor::Red);
+	//		EOSvChatLoginCompleted.Broadcast(false);
+	//		return;
+	//	}
+	//	if (!IsPlayerLoggedIn())
+	//	{
+	//		EOSvChatLoginCompleted.Broadcast(false);
+	//		return;
+	//	}
+	//	
+	//	IVoiceChat* vChatRef = IVoiceChat::Get();
+	//	if (vChatRef)
+	//	{
+	//		vChatUser = vChatRef->CreateUser();
+	//	}
+
+	//	if (vChatUser == nullptr)
+	//	{
+	//		EOSvChatLoginCompleted.Broadcast(false);
+	//		return;
+	//	}
+	//	/*TSharedPtr<const FUniqueNetId>*/ vChatUserID = IdentityPtr->GetUniquePlayerId(0);
+	//	FPlatformUserId PlatformUserID = IdentityPtr->GetPlatformUserIdFromUniqueNetId(*vChatUserID);
+	//	vChatUser->Login(PlatformUserID, vChatUserID->ToString(), TEXT(""), OnChatLoginCompleteDelegate);
+	//}
 }
 void UMGS_OnlineSubsystem::OnLoginWithEOSvChatCompleted(const FString& PlayerName, const FVoiceChatResult& Result)
 {
 	if (Result.IsSuccess())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("vChat Login Success"));
 		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("vChat Login Success")), FColor::Green);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("vChat Login FAILED!!!!"));
 	}
 	EOSvChatLoginCompleted.Broadcast(Result.IsSuccess());
 }
@@ -356,20 +393,67 @@ void UMGS_OnlineSubsystem::GetInputOutput(TArray<FString>& InputDeviceNames, TAr
 	{
 		for (auto InputDevice : vChatUser->GetAvailableInputDeviceInfos())
 		{
-			InputDeviceNames.Add(InputDevice.DisplayName);
+			InputDeviceInfos.Add(InputDevice);
+			//InputDeviceNames.Add(InputDevice.DisplayName);
 		}
 		for (auto OutputDevice : vChatUser->GetAvailableOutputDeviceInfos())
 		{
-			OutputDeviceNames.Add(OutputDevice.DisplayName);
+			OutputDeviceInfos.Add(OutputDevice);
+			//OutputDeviceNames.Add(OutputDevice.DisplayName);
 		}
+		/*InputDevices = InputDeviceNames;
+		OutputDevices = OutputDeviceNames;*/
+
+		for (FVoiceChatDeviceInfo InputDeviceInfo : InputDeviceInfos)
+		{
+			InputDevices.Add(InputDeviceInfo.DisplayName);
+		}
+		for (FVoiceChatDeviceInfo OutputDeviceInfo : OutputDeviceInfos)
+		{
+			OutputDevices.Add(OutputDeviceInfo.DisplayName);
+		}
+		InputDeviceNames = InputDevices;
+		OutputDeviceNames = OutputDevices;
 	}
 }
 
 void UMGS_OnlineSubsystem::SetInputOutputs(FString InputDeviceName, FString OutputDeviceName)
 {
+	IOnlineSubsystem* SubsystemEOS = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemEOS)
+	{
+		IVoiceChat* vChatRef = IVoiceChat::Get();
+		if (vChatRef) vChatUser = vChatRef->CreateUser();
+	}
+
 	if (vChatUser)
 	{
-		vChatUser->SetInputDeviceId(InputDeviceName);
-		vChatUser->SetInputDeviceId(OutputDeviceName);
+		FString DeviceName;
+		InputDeviceInfos = vChatUser->GetAvailableInputDeviceInfos();
+		OutputDeviceInfos = vChatUser->GetAvailableOutputDeviceInfos();
+		for (FVoiceChatDeviceInfo InputDeviceInfo : InputDeviceInfos)
+		{
+			DeviceName = InputDeviceInfo.DisplayName;
+			if (!InputDevices.Contains(DeviceName))
+			{
+				InputDevices.Add(DeviceName);
+			}
+		}
+		for (FVoiceChatDeviceInfo OutputDeviceInfo : OutputDeviceInfos)
+		{
+			DeviceName = OutputDeviceInfo.DisplayName;
+			if (!OutputDevices.Contains(DeviceName))
+			{
+				OutputDevices.Add(DeviceName);
+			}
+		}
+		if (!InputDeviceName.IsEmpty())
+		{
+			vChatUser->SetInputDeviceId(InputDeviceName);
+		}
+		if (!OutputDeviceName.IsEmpty())
+		{
+			vChatUser->SetOutputDeviceId(OutputDeviceName);
+		}
 	}
 }
