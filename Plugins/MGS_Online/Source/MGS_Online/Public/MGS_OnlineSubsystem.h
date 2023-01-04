@@ -9,6 +9,8 @@
 #include "FindSessionsCallbackProxy.h"
 #include "VoiceChat.h"
 #include "VoiceChatResult.h"
+#include "GameFramework/SaveGame.h"
+#include "Interfaces/OnlineStatsInterface.h"
 
 #include "MGS_OnlineSubsystem.generated.h"
 
@@ -20,6 +22,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMGSStartSessionCompleted, bool, bWa
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMGSDestroySessionCompleted, bool, bWasSuccessful);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEOSLoginCompleted, bool, bWasSuccessful);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEOSvChatLoginCompleted, bool, bWasSuccessful);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnFileContentSaveCompleted, bool, bWasSuccessful, FString, FileName, const TArray<uint8>&, FileContents);
 
 UCLASS()
 class MGS_ONLINE_API UMGS_OnlineSubsystem : public UGameInstanceSubsystem
@@ -37,31 +40,6 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	void SetGameSettings(int32 MaxPlayers, FString MatchType, bool bIsDedicatedServer);
-	/**
-	 * Returns the local player name.
-	 */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "MGS|Online")
-	FString GetCurrentPlayerName();
-	/**
-	 * Returns player's status.
-	 * @param IsLoggedIn Is player logged in into EOS.
-	 * @param OutStatus returns the actual status as a string text.
-	 */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "MGS|Online")
-	void GetPlayerStatus(bool& IsLoggedIn, FString& OutStatus);
-	UFUNCTION()
-	bool IsPlayerLoggedIn();
-
-	//Functions for menus
-
-	/**
-	 * To login using EOS.
-	 * @param ID The login ID if known. This should be blank if accountportal type is used!.
-	 * @param Token The login token, or password, if known, This should be blank if accountportal type is used!.
-	 * @param LoginType is the method used to log in. accountportal is set by default.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
-	void LoginWithEOS(FString ID, FString Token, FString LoginType);
 	/**
 	 * Create a new game session. Note this is not to start a game or travel to a new map(level).
 	 * @param MaxPlayers The maximum allowed players to join the session.
@@ -93,35 +71,83 @@ public:
 	FMGSStartSessionCompleted MGSStartSessionCompleted;
 	UPROPERTY(BlueprintAssignable, Category = "MGS||Online||Delegates")
 	FMGSDestroySessionCompleted MGSDestroySessionCompleted;
-	UPROPERTY(BlueprintAssignable, Category = "MGS||Online||Delegates")
-	FEOSLoginCompleted EOSLoginCompleted;
-	UPROPERTY(BlueprintAssignable, Category = "MGS||Online||Delegates")
-	FEOSvChatLoginCompleted EOSvChatLoginCompleted;
+	
+	//EOS
+	/**
+	 * To login using EOS.
+	 * @param ID The login ID if known. This should be blank if accountportal type is used!.
+	 * @param Token The login token, or password, if known, This should be blank if accountportal type is used!.
+	 * @param LoginType is the method used to log in. accountportal is set by default.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "MGS|EOS|Lobby")
+	void LoginWithEOS(FString ID, FString Token, FString LoginType);
+	/**
+	 * Returns if the local player has logged in.
+	 */
+	UFUNCTION()
+	bool IsPlayerLoggedIn();
+	/**
+	 * Returns player's status.
+	 * @param IsLoggedIn Is player logged in into EOS.
+	 * @param OutStatus returns the actual status as a string text.
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "MGS|EOS|Lobby")
+	void GetPlayerStatus(bool& IsLoggedIn, FString& OutStatus);
+	/**
+	 * Returns the local player name.
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "MGS|EOS|Lobby")
+	FString GetCurrentPlayerName();
 
-	//For VoiceChat
-	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
+	UPROPERTY(BlueprintAssignable, Category = "MGS|EOS|Lobby|Delegates")
+	FEOSLoginCompleted EOSLoginCompleted;
+	
+	//EOS VoiceChat
+	UFUNCTION(BlueprintCallable, Category = "MGS|EOS|vChat")
 	void LoginWithEOSvChat();
-	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
+	UFUNCTION(BlueprintCallable, Category = "MGS|EOS|vChat")
 	void SetEOSvChatVoiceVolmue(float NewVolume);
-	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
+	UFUNCTION(BlueprintCallable, Category = "MGS|EOS|vChat")
 	void SetEOSvChatVoiceMute(bool bMute);
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "MGS|Online")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "MGS|EOS|vChat")
 	void GetInputOutput(TArray<FString>&InputDeviceNames, TArray<FString>&OutputDeviceNames);
-	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
+	UFUNCTION(BlueprintCallable, Category = "MGS|EOS|vChat")
 	void SetInputOutputs(FString InputDeviceName, FString OutputDeviceName);
 	UFUNCTION()
 	void LoginEOSCompleted(bool bSuccess);
 	UFUNCTION()
 	void LoginEOSvChatCompleted(bool bSuccess);
 
-	UPROPERTY(BlueprintReadWrite, Category = "MGS|Online|vChat")
+	UPROPERTY(BlueprintReadWrite, Category = "MGS|EOS|vChat")
 	TArray<FString> InputDevices;
-	UPROPERTY(BlueprintReadWrite, Category = "MGS|Online|vChat")
+	UPROPERTY(BlueprintReadWrite, Category = "MGS|EOS|vChat")
 	TArray<FString> OutputDevices;
-	//UPROPERTY(BlueprintReadWrite, Category = "MGS|Online|vChat")
+	//UPROPERTY(BlueprintReadWrite, Category = "MGS|EOS|vChat")
 	TArray<FVoiceChatDeviceInfo> InputDeviceInfos;
-	//UPROPERTY(BlueprintReadWrite, Category = "MGS|Online|vChat")
+	//UPROPERTY(BlueprintReadWrite, Category = "MGS|EOS|vChat")
 	TArray<FVoiceChatDeviceInfo> OutputDeviceInfos;
+
+	UPROPERTY(BlueprintAssignable, Category = "MGS|EOS|Lobby|Delegates")
+	FEOSvChatLoginCompleted EOSvChatLoginCompleted;
+
+	//EOS Stats
+	UFUNCTION(BlueprintCallable, Category = "MGS|EOS|Stats")
+	void UpdateStats(FString StatName, int32 StatValue);
+	UFUNCTION(BlueprintCallable, Category = "MGS|EOS|Stats")
+	void GetStats(TArray<FString> StatNames);
+
+	//EOS Storage
+	UFUNCTION(BlueprintCallable, Category = "MGS|EOS|Storage")
+	TArray<uint8> ConvertSaveFileToUint(USaveGame* SaveGame);
+	UFUNCTION(BlueprintCallable, Category = "MGS|EOS|Storage")
+	USaveGame* ConvertUintToSaveFile(TArray<uint8> ConvertedSaveFile);
+	UFUNCTION(BlueprintCallable, Category = "MGS|EOS|Storage")
+	void UploadSavedData(FString FileName, TArray<uint8> DataValues);
+	UFUNCTION(BlueprintCallable, Category = "MGS|EOS|Storage")
+	void DownloadSavedData(FString FileName);
+
+	UPROPERTY(BlueprintAssignable, Category = "MGS|EOS|Storage|Delegates")
+	FOnFileContentSaveCompleted OnFileContentSaveCompleted;
 
 protected:
 	//callbacks for subsystem's delegates
@@ -132,6 +158,10 @@ protected:
 	void OnJoinSessionCompleted(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	void OnStartSessionCompleted(FName SessionName, bool bWasSuccessful);
 	void OnDestroySessionCompleted(FName SessionName, bool bWasSuccessful);
+	void OnUpdateStatsCompleted(const FOnlineError& Result);
+	void OnGetStatsCompleted(const FOnlineError& Result, const TArray<TSharedRef<const FOnlineStatsUserStats>> &UserStats);
+	void OnWriteUserFileComplete(bool bIsSuccessful, const FUniqueNetId& UserNetID, const FString& FileName);
+	void OnReadUserFileComplete(bool bIsSuccessful, const FUniqueNetId& UserNetID, const FString& FileName);
 
 private:
 	IOnlineSessionPtr SessionInterface;
@@ -155,6 +185,8 @@ private:
 	FDelegateHandle StartSessionHandle;
 	FOnDestroySessionCompleteDelegate DestroySessionCompleteDelegate;
 	FDelegateHandle DestroySessionHandle;
+	/*FOnlineStatsUpdateStatsComplete StatsUpdateCompleteDelegate;
+	FDelegateHandle StatsUpdateHandle;*/
 
 	bool bCreateSessionOnDestroy = false;
 	int32 LastMaxPlayers;

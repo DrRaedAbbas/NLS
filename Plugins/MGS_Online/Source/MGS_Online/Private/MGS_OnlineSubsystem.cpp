@@ -5,8 +5,8 @@
 #include "MGSFunctionLibrary.h"
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystemUtils.h"
-#include "IOnlineSubsystemEOS.h"
 #include "OnlineSubsystem.h"
+#include "Kismet/GameplayStatics.h"
 
 UMGS_OnlineSubsystem::UMGS_OnlineSubsystem():
 OnLoginCompleteDelegate(FOnLoginCompleteDelegate::CreateUObject(this, &ThisClass::OnLoginWithEOSCompleted)),
@@ -39,127 +39,6 @@ void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType, 
 	SessionSettings->bAllowInvites = true;
 	SessionSettings->BuildUniqueId = 1;
 	SessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-}
-
-FString UMGS_OnlineSubsystem::GetCurrentPlayerName()
-{
-	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
-	if (SubsystemRef)
-	{
-		IdentityPtr = SubsystemRef->GetIdentityInterface();
-		if (!IdentityPtr.IsValid())
-		{
-			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Identity Pointer Not valid!")), FColor::Red);
-			return FString();
-		}
-		if (IdentityPtr->GetLoginStatus(0) == ELoginStatus::LoggedIn) return IdentityPtr->GetPlayerNickname(0);
-	}
-	return FString();
-}
-
-void UMGS_OnlineSubsystem::GetPlayerStatus(bool& IsLoggedIn, FString& OutStatus)
-{
-	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
-	if (SubsystemRef)
-	{
-		IdentityPtr = SubsystemRef->GetIdentityInterface();
-		if (!IdentityPtr.IsValid())
-		{
-			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Identity Pointer Not valid!")), FColor::Red);
-			return;
-		}
-		OutStatus = ToString(IdentityPtr->GetLoginStatus(0));
-		IsLoggedIn = IdentityPtr->GetLoginStatus(0) == ELoginStatus::LoggedIn;
-	}
-}
-
-bool UMGS_OnlineSubsystem::IsPlayerLoggedIn()
-{
-	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
-	if (SubsystemRef)
-	{
-		IdentityPtr = SubsystemRef->GetIdentityInterface();
-		if (!IdentityPtr.IsValid())
-		{
-			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Identity Pointer Not valid!")), FColor::Red);
-			return false;
-		}
-		return IdentityPtr->GetLoginStatus(0) == ELoginStatus::LoggedIn;
-	}
-	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Subsystem Pointer Not valid!")), FColor::Red);
-	return false;
-}
-
-//***********************LOGIN*******************
-void UMGS_OnlineSubsystem::LoginWithEOS(FString ID, FString Token, FString LoginType)
-{
-	EOSLoginCompleted.AddDynamic(this, &ThisClass::LoginEOSCompleted);
-	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
-	if (SubsystemRef)
-	{
-		IdentityPtr = SubsystemRef->GetIdentityInterface();
-		if(!IdentityPtr.IsValid())
-		{
-			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Identity Pointer Not valid!")), FColor::Red);
-			EOSLoginCompleted.Broadcast(false);
-			return;
-		}
-		LoginHandle = IdentityPtr->AddOnLoginCompleteDelegate_Handle(0, OnLoginCompleteDelegate);
-		FOnlineAccountCredentials Credentials;
-		Credentials.Id = "";
-		Credentials.Token = "";
-		Credentials.Type = "accountportal";
-		
-		//IdentityPtr->OnLoginCompleteDelegates->AddUObject(this, &ThisClass::OnLoginWithEOSCompleted);
-		if (!IdentityPtr->Login(0, Credentials))
-		{
-			IdentityPtr->ClearOnLoginCompleteDelegate_Handle(0, LoginHandle);
-			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Login Failed!")), FColor::Red);
-		}
-		;
-	}
-}
-void UMGS_OnlineSubsystem::OnLoginWithEOSCompleted(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserID,
-                                                   const FString& Error)
-{
-	if(IdentityPtr) IdentityPtr->ClearOnLoginCompleteDelegate_Handle(0, LoginHandle);
-	if (bWasSuccessful)
-	{
-		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Login Success")), FColor::Green);
-	}
-	else
-	{
-		MGSFunctionLibrary->DisplayDebugMessage(FString(Error), FColor::Red);
-	}
-	EOSLoginCompleted.Broadcast(bWasSuccessful);
-}
-
-void UMGS_OnlineSubsystem::LoginEOSCompleted(bool bSuccess)
-{
-	if (!bSuccess)
-	{
-		UE_LOG(LogTemp, Error, TEXT("EOS Login completed but FAILED!!!!!!"));
-		return;
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("EOS Login completed Success :) "));
-
-	IOnlineSubsystem* SubsystemEOS = Online::GetSubsystem(this->GetWorld());
-	if (SubsystemEOS)
-	{
-		IVoiceChat* vChatRef = IVoiceChat::Get();
-		if (vChatRef) vChatUser = vChatRef->CreateUser();
-	}
-
-	if (vChatUser)
-	{
-		FString vChatUserName = vChatUser->GetLoggedInPlayerName();
-		UE_LOG(LogTemp, Warning, TEXT("vChat User: &s"), *vChatUserName);
-
-		/*vChatUserID = IdentityPtr->GetUniquePlayerId(0);
-		FPlatformUserId PlatformUserID = IdentityPtr->GetPlatformUserIdFromUniqueNetId(*vChatUserID);
-		vChatUser->Login(PlatformUserID, vChatUserID->ToString(), TEXT(""), OnChatLoginCompleteDelegate);*/
-	}
 }
 
 //*******************Creating Session**********************
@@ -318,7 +197,133 @@ void UMGS_OnlineSubsystem::OnDestroySessionCompleted(FName SessionName, bool bWa
 	MGSDestroySessionCompleted.Broadcast(bWasSuccessful);
 }
 
-//*******************Voice Chat***************************
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+//*******************EOS**************************
+FString UMGS_OnlineSubsystem::GetCurrentPlayerName()
+{
+	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemRef)
+	{
+		IdentityPtr = SubsystemRef->GetIdentityInterface();
+		if (!IdentityPtr.IsValid())
+		{
+			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Identity Pointer Not valid!")), FColor::Red);
+			return FString();
+		}
+		if (IdentityPtr->GetLoginStatus(0) == ELoginStatus::LoggedIn) return IdentityPtr->GetPlayerNickname(0);
+	}
+	return FString();
+}
+
+//*******************EOS LOGIN*******************
+void UMGS_OnlineSubsystem::GetPlayerStatus(bool& IsLoggedIn, FString& OutStatus)
+{
+	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemRef)
+	{
+		IdentityPtr = SubsystemRef->GetIdentityInterface();
+		if (!IdentityPtr.IsValid())
+		{
+			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Identity Pointer Not valid!")), FColor::Red);
+			return;
+		}
+		OutStatus = ToString(IdentityPtr->GetLoginStatus(0));
+		IsLoggedIn = IdentityPtr->GetLoginStatus(0) == ELoginStatus::LoggedIn;
+	}
+}
+
+bool UMGS_OnlineSubsystem::IsPlayerLoggedIn()
+{
+	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemRef)
+	{
+		IdentityPtr = SubsystemRef->GetIdentityInterface();
+		if (!IdentityPtr.IsValid())
+		{
+			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Identity Pointer Not valid!")), FColor::Red);
+			return false;
+		}
+		return IdentityPtr->GetLoginStatus(0) == ELoginStatus::LoggedIn;
+	}
+	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Subsystem Pointer Not valid!")), FColor::Red);
+	return false;
+}
+
+void UMGS_OnlineSubsystem::LoginWithEOS(FString ID, FString Token, FString LoginType)
+{
+	if (IsPlayerLoggedIn()) return;
+
+	EOSLoginCompleted.AddDynamic(this, &ThisClass::LoginEOSCompleted);
+	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemRef)
+	{
+		IdentityPtr = SubsystemRef->GetIdentityInterface();
+		if (!IdentityPtr.IsValid())
+		{
+			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Identity Pointer Not valid!")), FColor::Red);
+			EOSLoginCompleted.Broadcast(false);
+			return;
+		}
+		LoginHandle = IdentityPtr->AddOnLoginCompleteDelegate_Handle(0, OnLoginCompleteDelegate);
+		FOnlineAccountCredentials Credentials;
+		Credentials.Id = "";
+		Credentials.Token = "";
+		Credentials.Type = "accountportal";
+
+		//IdentityPtr->OnLoginCompleteDelegates->AddUObject(this, &ThisClass::OnLoginWithEOSCompleted);
+		if (!IdentityPtr->Login(0, Credentials))
+		{
+			IdentityPtr->ClearOnLoginCompleteDelegate_Handle(0, LoginHandle);
+			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Login Failed!")), FColor::Red);
+		}
+		;
+	}
+}
+
+void UMGS_OnlineSubsystem::OnLoginWithEOSCompleted(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserID, const FString& Error)
+{
+	if (IdentityPtr) IdentityPtr->ClearOnLoginCompleteDelegate_Handle(0, LoginHandle);
+	if (bWasSuccessful)
+	{
+		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Login Success")), FColor::Green);
+	}
+	else
+	{
+		MGSFunctionLibrary->DisplayDebugMessage(FString(Error), FColor::Red);
+	}
+	EOSLoginCompleted.Broadcast(bWasSuccessful);
+}
+
+void UMGS_OnlineSubsystem::LoginEOSCompleted(bool bSuccess)
+{
+	if (!bSuccess)
+	{
+		UE_LOG(LogTemp, Error, TEXT("EOS Login completed but FAILED!!!!!!"));
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("EOS Login completed Success :) "));
+
+	IOnlineSubsystem* SubsystemEOS = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemEOS)
+	{
+		IVoiceChat* vChatRef = IVoiceChat::Get();
+		if (vChatRef) vChatUser = vChatRef->CreateUser();
+	}
+
+	if (vChatUser)
+	{
+		FString vChatUserName = vChatUser->GetLoggedInPlayerName();
+		UE_LOG(LogTemp, Warning, TEXT("vChat User: &s"), *vChatUserName);
+
+		/*vChatUserID = IdentityPtr->GetUniquePlayerId(0);
+		FPlatformUserId PlatformUserID = IdentityPtr->GetPlatformUserIdFromUniqueNetId(*vChatUserID);
+		vChatUser->Login(PlatformUserID, vChatUserID->ToString(), TEXT(""), OnChatLoginCompleteDelegate);*/
+	}
+}
+
+//*******************EOS Voice Chat***************************
 void UMGS_OnlineSubsystem::LoginWithEOSvChat()
 {
 	//EOSvChatLoginCompleted.AddDynamic(this, &ThisClass::LoginEOSvChatCompleted);
@@ -403,14 +408,21 @@ void UMGS_OnlineSubsystem::GetInputOutput(TArray<FString>& InputDeviceNames, TAr
 		}
 		/*InputDevices = InputDeviceNames;
 		OutputDevices = OutputDeviceNames;*/
-
+		int32 DevicID = 0;
 		for (FVoiceChatDeviceInfo InputDeviceInfo : InputDeviceInfos)
 		{
 			InputDevices.Add(InputDeviceInfo.DisplayName);
+			MGSFunctionLibrary->DisplayDebugMessage(InputDeviceInfo.DisplayName, FColor::Purple);
+			MGSFunctionLibrary->DisplayDebugMessage(FString::FromInt(DevicID), FColor::Purple);
+			DevicID++;
 		}
+		DevicID = 0;
 		for (FVoiceChatDeviceInfo OutputDeviceInfo : OutputDeviceInfos)
 		{
 			OutputDevices.Add(OutputDeviceInfo.DisplayName);
+			MGSFunctionLibrary->DisplayDebugMessage(OutputDeviceInfo.DisplayName, FColor::Purple);
+			MGSFunctionLibrary->DisplayDebugMessage(FString::FromInt(DevicID), FColor::Purple);
+			DevicID++;
 		}
 		InputDeviceNames = InputDevices;
 		OutputDeviceNames = OutputDevices;
@@ -456,4 +468,150 @@ void UMGS_OnlineSubsystem::SetInputOutputs(FString InputDeviceName, FString Outp
 			vChatUser->SetOutputDeviceId(OutputDeviceName);
 		}
 	}
+}
+
+//***********************EOS Stats**********************************
+void UMGS_OnlineSubsystem::UpdateStats(FString StatName, int32 StatValue)
+{
+	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemRef)
+	{
+		IdentityPtr = SubsystemRef->GetIdentityInterface();
+		if (!IdentityPtr.IsValid()) return;
+		IOnlineStatsPtr StatPtr = SubsystemRef->GetStatsInterface();
+		if (!StatPtr.IsValid()) return;
+		FOnlineStatsUserUpdatedStats UserUpdatedStats = FOnlineStatsUserUpdatedStats(IdentityPtr->GetUniquePlayerId(0).ToSharedRef());
+		UserUpdatedStats.Stats.Add(StatName, FOnlineStatUpdate(StatValue, FOnlineStatUpdate::EOnlineStatModificationType::Sum));
+		TArray<FOnlineStatsUserUpdatedStats> StatsArray;
+		StatsArray.Add(UserUpdatedStats);
+		StatPtr->UpdateStats(IdentityPtr->GetUniquePlayerId(0).ToSharedRef(), StatsArray, FOnlineStatsUpdateStatsComplete::CreateUObject(this, &ThisClass::OnUpdateStatsCompleted));
+	}
+}
+void UMGS_OnlineSubsystem::OnUpdateStatsCompleted(const FOnlineError& Result)
+{
+	if (Result.bSucceeded)
+	{
+		MGSFunctionLibrary->DisplayDebugMessage("Stats Update SUCCESS!", FColor::Green);
+		return;
+	}
+	MGSFunctionLibrary->DisplayDebugMessage("Stats Update SUCCESS!", FColor::Red);
+}
+
+void UMGS_OnlineSubsystem::GetStats(TArray<FString> StatNames)
+{
+	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemRef)
+	{
+		IdentityPtr = SubsystemRef->GetIdentityInterface();
+		if (!IdentityPtr.IsValid()) return;
+		IOnlineStatsPtr StatPtr = SubsystemRef->GetStatsInterface();
+		if (!StatPtr.IsValid()) return;
+		TArray<TSharedRef<const FUniqueNetId>> UserVars;
+		UserVars.Add(IdentityPtr->GetUniquePlayerId(0).ToSharedRef());
+		StatPtr->QueryStats(IdentityPtr->GetUniquePlayerId(0).ToSharedRef(), UserVars, StatNames, FOnlineStatsQueryUsersStatsComplete::CreateUObject(this, &ThisClass::OnGetStatsCompleted));
+		//StatPtr->GetStats(IdentityPtr->GetUniquePlayerId(0).ToSharedRef());
+	}
+}
+
+void UMGS_OnlineSubsystem::OnGetStatsCompleted(const FOnlineError& Result, const TArray<TSharedRef<const FOnlineStatsUserStats>>& UserStats)
+{
+	if (Result.bSucceeded)
+	{
+		for (auto UserStat : UserStats)
+		{
+			for (auto Stat : UserStat->Stats)
+			{
+				FString KeyName = Stat.Key;
+				int32 ReturnedValue;
+				Stat.Value.GetValue(ReturnedValue);
+				//UE_LOG(LogTemp, Warning, TEXT("Stats %s value is %d"), *KeyName, ReturnedValue);
+				MGSFunctionLibrary->DisplayDebugMessage("Stat "+ KeyName+ " value is: " + FString::FromInt(ReturnedValue), FColor::Green);
+			}
+		}
+		MGSFunctionLibrary->DisplayDebugMessage("Stats Query SUCCESS!", FColor::Green);
+		return;
+	}
+	MGSFunctionLibrary->DisplayDebugMessage("Stats Query FAILED!", FColor::Red);
+}
+
+//************************EOS Storage*******************************
+TArray<uint8> UMGS_OnlineSubsystem::ConvertSaveFileToUint(USaveGame* SaveGame)
+{
+	TArray<uint8> LocSaveGame;
+	if (SaveGame)
+	{
+		UGameplayStatics::SaveGameToMemory(SaveGame, LocSaveGame);
+	}
+	return LocSaveGame;
+}
+
+USaveGame* UMGS_OnlineSubsystem::ConvertUintToSaveFile(TArray<uint8> ConvertedSaveFile)
+{
+	USaveGame* LocSaveGame = nullptr;
+	if (!ConvertedSaveFile.IsEmpty())
+	{
+		LocSaveGame = UGameplayStatics::LoadGameFromMemory(ConvertedSaveFile);
+	}
+	return LocSaveGame;
+}
+
+void UMGS_OnlineSubsystem::UploadSavedData(FString FileName, TArray<uint8> DataValues)
+{
+	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemRef)
+	{
+		IdentityPtr = SubsystemRef->GetIdentityInterface();
+		if (!IdentityPtr.IsValid()) return;
+		IOnlineUserCloudPtr UserCloudPtr = SubsystemRef->GetUserCloudInterface();
+		if (!UserCloudPtr.IsValid()) return;
+		TSharedPtr<const FUniqueNetId> UserIDRef = IdentityPtr->GetUniquePlayerId(0).ToSharedRef();
+		UserCloudPtr->OnWriteUserFileCompleteDelegates.AddUObject(this, &ThisClass::OnWriteUserFileComplete);
+		UserCloudPtr->WriteUserFile(*UserIDRef, FileName, DataValues);
+	}
+}
+void UMGS_OnlineSubsystem::OnWriteUserFileComplete(bool bIsSuccessful, const FUniqueNetId& UserNetID, const FString& FileName)
+{
+	if (bIsSuccessful)
+	{
+		MGSFunctionLibrary->DisplayDebugMessage(FileName+" uploaded successfully!", FColor::Green);
+		return;
+	}
+	MGSFunctionLibrary->DisplayDebugMessage("Uploading data FAILED!", FColor::Red);
+}
+
+void UMGS_OnlineSubsystem::DownloadSavedData(FString FileName)
+{
+	IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	if (SubsystemRef)
+	{
+		IdentityPtr = SubsystemRef->GetIdentityInterface();
+		if (!IdentityPtr.IsValid()) return;
+		IOnlineUserCloudPtr UserCloudPtr = SubsystemRef->GetUserCloudInterface();
+		if (!UserCloudPtr.IsValid()) return;
+		TSharedPtr<const FUniqueNetId> UserIDRef = IdentityPtr->GetUniquePlayerId(0).ToSharedRef();
+		UserCloudPtr->OnReadUserFileCompleteDelegates.AddUObject(this, &ThisClass::OnReadUserFileComplete);
+		UserCloudPtr->ReadUserFile(*UserIDRef, FileName);
+	}
+}
+void UMGS_OnlineSubsystem::OnReadUserFileComplete(bool bIsSuccessful, const FUniqueNetId& UserNetID, const FString& FileName)
+{
+	if (bIsSuccessful)
+	{
+		IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
+		if (SubsystemRef)
+		{
+			IdentityPtr = SubsystemRef->GetIdentityInterface();
+			if (!IdentityPtr.IsValid()) return;
+			IOnlineUserCloudPtr UserCloudPtr = SubsystemRef->GetUserCloudInterface();
+			if (!UserCloudPtr.IsValid()) return;
+			TSharedPtr<const FUniqueNetId> UserIDRef = IdentityPtr->GetUniquePlayerId(0).ToSharedRef();
+			TArray<uint8> LocFileContent;
+			UserCloudPtr->GetFileContents(*UserIDRef, FileName, LocFileContent);
+			OnFileContentSaveCompleted.Broadcast(bIsSuccessful, FileName, LocFileContent);
+		}
+		MGSFunctionLibrary->DisplayDebugMessage(FileName+" downloaded successfully!", FColor::Green);
+		return;
+	}
+	OnFileContentSaveCompleted.Broadcast(bIsSuccessful, "", {});
+	MGSFunctionLibrary->DisplayDebugMessage("Downloading data FAILED!", FColor::Red);
 }
