@@ -5,7 +5,6 @@
 
 #include "MenuButton.h"
 #include "MGSFunctionLibrary.h"
-#include "MGS_OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 #include "Blueprint/WidgetTree.h"
@@ -28,10 +27,6 @@ void UOnlineMenu::NativeDestruct()
 {
 	UnloadMenu();
 	Super::NativeDestruct();
-}
-
-void UOnlineMenu::EventSaveGame_Implementation()
-{
 }
 
 void UOnlineMenu::LoadMenu()
@@ -89,7 +84,10 @@ void UOnlineMenu::UnloadMenu()
 	}
 	OnButtonReady.Broadcast(true);
 	RemoveFromParent();
-	EventSaveGame();
+}
+
+void UOnlineMenu::SaveGame_Implementation()
+{
 }
 
 void UOnlineMenu::HostButtonClicked()
@@ -162,6 +160,7 @@ void UOnlineMenu::QuitButtonClicked()
 
 void UOnlineMenu::OnCreateSession(bool bWasSuccessful)
 {
+	OnButtonReady.Broadcast(true);
 	if (bWasSuccessful)
 	{
 		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Game Session created!")), FColor::Green);
@@ -172,28 +171,23 @@ void UOnlineMenu::OnCreateSession(bool bWasSuccessful)
 			World->ServerTravel(LevelPath);
 			UnloadMenu();
 		}
-		OnButtonReady.Broadcast(true);
 	}
 	else
 	{
 		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Session was not created!")), FColor::Red);
-		OnButtonReady.Broadcast(true);
 	}
 }
 
 void UOnlineMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful)
 {
-	if (MGS_OnlineSubsystem == nullptr)
-	{
-		OnButtonReady.Broadcast(true);
-		return;
-	}
+	OnButtonReady.Broadcast(true);
+	if (MGS_OnlineSubsystem == nullptr) return;
 
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Finding Game Sessions!")), FColor::Cyan);
 	for (auto Result : SessionResults)
 	{
-		if(Result.Session.NumOpenPublicConnections <= 0) continue;
-		if(Result.Session.NumOpenPublicConnections <= MaxPlayers) continue;
+		/*if(Result.Session.NumOpenPublicConnections <= 0) continue;
+		if(Result.Session.NumOpenPublicConnections <= MaxPlayers) continue;*/
 
 		FString FoundGameType;
 		Result.Session.SessionSettings.Get(FName("MatchType"), FoundGameType);
@@ -202,15 +196,14 @@ void UOnlineMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& Sessi
 		{
 			SessionSearchResult = Result;
 			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Game Session Found")), FColor::Green);
-			
 			break;
 		}
 	}
-	OnButtonReady.Broadcast(true);
 }
 
 void UOnlineMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 {
+	OnButtonReady.Broadcast(true);
 	if(IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get())
 	{
 		IOnlineSessionPtr SessionInterface = Subsystem->GetSessionInterface();
@@ -234,7 +227,6 @@ void UOnlineMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 	{
 		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Subsystem Does Not Exist!")), FColor::Red);
 	}
-	OnButtonReady.Broadcast(true);
 }
 
 void UOnlineMenu::OnStartSession(bool bWasSuccessful)
@@ -244,6 +236,7 @@ void UOnlineMenu::OnStartSession(bool bWasSuccessful)
 
 void UOnlineMenu::OnDestroySession(bool bWasSuccessful)
 {
+	OnButtonReady.Broadcast(true);
 	UWorld* World = GetWorld();
 	if (World)
 	{
@@ -265,5 +258,4 @@ void UOnlineMenu::OnDestroySession(bool bWasSuccessful)
 	{
 		UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, false);
 	}
-	OnButtonReady.Broadcast(true);
 }

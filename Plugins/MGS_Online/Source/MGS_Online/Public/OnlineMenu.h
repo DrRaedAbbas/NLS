@@ -3,20 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MGS_OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include "Blueprint/UserWidget.h"
 #include "Interfaces/OnlineSessionInterface.h"
 
 #include "OnlineMenu.generated.h"
-
-UENUM(BlueprintType)
-enum class EGameType : uint8
-{
-	NONE,
-	FreeForAll UMETA(DisplayName = "Free For All"),
-	DeathMatch UMETA(DisplayName = "Death Match"),
-	TeamDeathMatch UMETA(DisplayName = "Team Death Match")
-};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnButtonReady, bool, bButtonRead)
 
@@ -32,6 +24,8 @@ public:
 	void LoadMenu();
 	UFUNCTION(BlueprintCallable)
 	void UnloadMenu();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "MGS")
+	void SaveGame();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
 	int32 MaxPlayers = 4;
@@ -66,8 +60,6 @@ private:
 protected:
 	virtual bool Initialize() override;
 	virtual void NativeDestruct() override;
-	UFUNCTION(BlueprintNativeEvent)
-	void EventSaveGame();
 
 	//Custom delegates callbacks
 	UFUNCTION()

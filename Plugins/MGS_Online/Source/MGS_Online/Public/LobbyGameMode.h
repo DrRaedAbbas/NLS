@@ -16,6 +16,7 @@ class MGS_ONLINE_API ALobbyGameMode : public AGameMode
 
 public:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
 
 	UPROPERTY()
 	int32 MaxPlayersAllowed;

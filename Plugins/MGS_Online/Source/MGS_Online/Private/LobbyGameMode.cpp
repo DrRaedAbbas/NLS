@@ -29,3 +29,13 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 		}
 	}
 }
+
+void ALobbyGameMode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+
+	int32 NumberOfCurrentPlayers = GameState.Get()->PlayerArray.Num();
+	FString NumberOfPlayersString = FString(TEXT("***Number Of Players: ") + FString::FormatAsNumber(NumberOfCurrentPlayers));
+
+	MGSFunctionLibrary->DisplayDebugMessage(NumberOfPlayersString, FColor::Orange);
+}

@@ -14,6 +14,14 @@
 
 #include "MGS_OnlineSubsystem.generated.h"
 
+UENUM(BlueprintType)
+enum class EGameType : uint8
+{
+	NONE,
+	FreeForAll UMETA(DisplayName = "Free For All"),
+	DeathMatch UMETA(DisplayName = "Death Match"),
+	TeamDeathMatch UMETA(DisplayName = "Team Death Match")
+};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMGSCreateSessionCompleted, bool, bWasSuccessful);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FMGSFindSessionsCompleted, const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
@@ -81,7 +89,7 @@ public:
 	FMGSStartSessionCompleted MGSStartSessionCompleted;
 	UPROPERTY(BlueprintAssignable, Category = "MGS||Online||Delegates")
 	FMGSDestroySessionCompleted MGSDestroySessionCompleted;
-	
+
 	//EOS
 	/**
 	 * To login using EOS.
