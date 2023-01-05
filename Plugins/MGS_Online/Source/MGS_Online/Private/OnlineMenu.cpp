@@ -9,6 +9,8 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 #include "Blueprint/WidgetTree.h"
+#include "GameFramework/GameModeBase.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 void UOnlineMenu::NativePreConstruct()
 {
@@ -28,11 +30,16 @@ void UOnlineMenu::NativeDestruct()
 	Super::NativeDestruct();
 }
 
+void UOnlineMenu::EventSaveGame_Implementation()
+{
+}
+
 void UOnlineMenu::LoadMenu()
 {
 	AddToViewport();
 	SetVisibility(ESlateVisibility::Visible);
 	bIsFocusable = true;
+	OnButtonReady.Broadcast(true);
 
 	if (UWorld* World = GetWorld())
 	{
@@ -80,7 +87,9 @@ void UOnlineMenu::UnloadMenu()
 			PlayerController->SetShowMouseCursor(false);
 		}
 	}
+	OnButtonReady.Broadcast(true);
 	RemoveFromParent();
+	EventSaveGame();
 }
 
 void UOnlineMenu::HostButtonClicked()
@@ -142,6 +151,15 @@ void UOnlineMenu::FindButtonClicked()
 	}
 }
 
+void UOnlineMenu::QuitButtonClicked()
+{
+	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Quit button clicked")), FColor::Cyan);
+	if (MGS_OnlineSubsystem)
+	{
+		MGS_OnlineSubsystem->DestroyGameSession();
+	}
+}
+
 void UOnlineMenu::OnCreateSession(bool bWasSuccessful)
 {
 	if (bWasSuccessful)
@@ -152,6 +170,7 @@ void UOnlineMenu::OnCreateSession(bool bWasSuccessful)
 		{
 			LevelPath = LevelPath + FString(TEXT("?listen"));
 			World->ServerTravel(LevelPath);
+			UnloadMenu();
 		}
 		OnButtonReady.Broadcast(true);
 	}
@@ -173,7 +192,8 @@ void UOnlineMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& Sessi
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Finding Game Sessions!")), FColor::Cyan);
 	for (auto Result : SessionResults)
 	{
-		if(Result.Session.NumOpenPublicConnections < 1) continue;
+		if(Result.Session.NumOpenPublicConnections <= 0) continue;
+		if(Result.Session.NumOpenPublicConnections <= MaxPlayers) continue;
 
 		FString FoundGameType;
 		Result.Session.SessionSettings.Get(FName("MatchType"), FoundGameType);
@@ -202,6 +222,7 @@ void UOnlineMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 			if (PlayerController)
 			{
 				PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+				UnloadMenu();
 			}
 		}
 		else
@@ -223,5 +244,26 @@ void UOnlineMenu::OnStartSession(bool bWasSuccessful)
 
 void UOnlineMenu::OnDestroySession(bool bWasSuccessful)
 {
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		AGameModeBase* GameMode = World->GetAuthGameMode();
+		if (GameMode)
+		{
+			GameMode->ReturnToMainMenuHost();
+		}
+		else
+		{
+			if(APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController())
+			{
+				PlayerController->ClientReturnToMainMenuWithTextReason(FText());
+				UnloadMenu();
+			}
+		}
+	}
+	if (!IsInGameMenu)
+	{
+		UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, false);
+	}
 	OnButtonReady.Broadcast(true);
 }

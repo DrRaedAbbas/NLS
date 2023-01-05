@@ -2,7 +2,6 @@
 
 #include "MenuButton.h"
 #include "OnlineMenu.h"
-#include "Kismet/KismetSystemLibrary.h"
 
 #define LOCTEXT_NAMESPACE "UMG"
 
@@ -62,7 +61,7 @@ void UMenuButton::OnButtonClicked()
 		}
 		case EButtonType::QuitButton:
 		{
-			UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, false);
+			MainMenu->QuitButtonClicked();
 			break;
 		}
 			
@@ -75,5 +74,5 @@ void UMenuButton::OnButtonClicked()
 
 void UMenuButton::OnButtonReady(bool bButtonReady)
 {
-	SetIsEnabled(true);
+	SetIsEnabled(bButtonReady);
 }

@@ -43,6 +43,8 @@ public:
 	FString LevelPath = FString("/Game/NLS/Maps/Lobby");
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
 	bool bIsDedicatedServer = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
+	bool IsInGameMenu = false;
 
 	UFUNCTION()
 	void HostButtonClicked();
@@ -50,6 +52,8 @@ public:
 	void JoingButtonClicked();
 	UFUNCTION()
 	void FindButtonClicked();
+	UFUNCTION()
+	void QuitButtonClicked();
 
 	FOnButtonReady OnButtonReady;
 
@@ -62,6 +66,8 @@ private:
 protected:
 	virtual bool Initialize() override;
 	virtual void NativeDestruct() override;
+	UFUNCTION(BlueprintNativeEvent)
+	void EventSaveGame();
 
 	//Custom delegates callbacks
 	UFUNCTION()

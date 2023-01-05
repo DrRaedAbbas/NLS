@@ -32,6 +32,16 @@ class MGS_ONLINE_API UMGS_OnlineSubsystem : public UGameInstanceSubsystem
 public:
 	UMGS_OnlineSubsystem();
 
+	////////JUST TESTING CREATING WILD CARD
+	UFUNCTION(BlueprintCallable, CustomThunk, meta = (DisplayName="test function3", Keywords = "testkeyword", MapParam = "Options", MapKeyParam = "Output", AutoCreateRefTerm = "Options"), Category = "MyProject")
+	static void TestFunction3(const TMap<int32, int32>& Options, int32& Output);
+	DECLARE_FUNCTION(execTestFunction3)
+	{
+		// add some code to get params
+	}
+
+
+
 	/**
 	 * Set the session settings. The majority of these settings are set automatically but they will be exposed to blueprint in future releases.
 	 * @param MaxPlayers The maximum allowed players to join the session.

@@ -26,6 +26,9 @@ DestroySessionCompleteDelegate(FOnDestroySessionCompleteDelegate::CreateUObject(
 
 void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType, bool bIsDedicatedServer)
 {
+	/*FName NewSettings = FName();
+	SessionSettings->Set(NewSettings, MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);*/
+
 	SessionSettings = MakeShareable(new FOnlineSessionSettings());
 	SessionSettings->NumPublicConnections = MaxPlayers;
 	SessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
@@ -512,7 +515,6 @@ void UMGS_OnlineSubsystem::GetStats(TArray<FString> StatNames)
 		//StatPtr->GetStats(IdentityPtr->GetUniquePlayerId(0).ToSharedRef());
 	}
 }
-
 void UMGS_OnlineSubsystem::OnGetStatsCompleted(const FOnlineError& Result, const TArray<TSharedRef<const FOnlineStatsUserStats>>& UserStats)
 {
 	if (Result.bSucceeded)
