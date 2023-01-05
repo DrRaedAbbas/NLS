@@ -26,11 +26,10 @@ void UMenuButton::SetupButton(UOnlineMenu* NewMainMenu)
 {
 	if (NewMainMenu == nullptr) return;
 	MainMenu = NewMainMenu;
-	if (MainMenu)
-	{
-		if (MainMenu->OnButtonReady.IsBound()) return;
+	if (MainMenu) MainMenu->OnButtonReady.AddDynamic(this, &ThisClass::OnButtonReady);
+	/*{
 		MainMenu->OnButtonReady.AddDynamic(this, &ThisClass::OnButtonReady);
-	}
+	}*/
 }
 
 void UMenuButton::OnButtonClicked()

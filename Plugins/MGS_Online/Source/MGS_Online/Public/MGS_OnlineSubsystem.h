@@ -14,14 +14,14 @@
 
 #include "MGS_OnlineSubsystem.generated.h"
 
-UENUM(BlueprintType)
-enum class EGameType : uint8
-{
-	NONE,
-	FreeForAll UMETA(DisplayName = "Free For All"),
-	DeathMatch UMETA(DisplayName = "Death Match"),
-	TeamDeathMatch UMETA(DisplayName = "Team Death Match")
-};
+//UENUM(BlueprintType)
+//enum class EGameType : uint8
+//{
+//	NONE,
+//	FreeForAll UMETA(DisplayName = "Free For All"),
+//	DeathMatch UMETA(DisplayName = "Death Match"),
+//	TeamDeathMatch UMETA(DisplayName = "Team Death Match")
+//};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMGSCreateSessionCompleted, bool, bWasSuccessful);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FMGSFindSessionsCompleted, const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
@@ -52,19 +52,20 @@ public:
 
 	/**
 	 * Set the session settings. The majority of these settings are set automatically but they will be exposed to blueprint in future releases.
+	 * @param ServerName The name of the server set by the host player.
 	 * @param MaxPlayers The maximum allowed players to join the session.
 	 * @param MatchType FreeForAll, DeathMatch or TeamDeathMatch match type (also known as game mode).
 	 * @param bIsDedicatedServer should generally be set to false unless a Dedicated server is running.
 	 */
 	UFUNCTION(BlueprintCallable)
-	void SetGameSettings(int32 MaxPlayers, FString MatchType, bool bIsDedicatedServer);
+	void SetGameSettings(FString ServerName, int32 MaxPlayers, FString MatchType, bool bIsDedicatedServer);
 	/**
 	 * Create a new game session. Note this is not to start a game or travel to a new map(level).
 	 * @param MaxPlayers The maximum allowed players to join the session.
 	 * @param MatchType FreeForAll, DeathMatch or TeamDeathMatch match type (also known as game mode).
 	 */
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
-	void CreateGameSession(int32 MaxPlayers, FString MatchType);
+	void CreateGameSession(/*int32 MaxPlayers, FString MatchType*/);
 	/**
 	 * Find all available game sessions.
 	 * @param MaxSearchResults The maximum number of search results. Set to a high value during testing/debug.

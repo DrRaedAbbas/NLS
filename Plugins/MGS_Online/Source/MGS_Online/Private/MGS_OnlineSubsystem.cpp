@@ -24,15 +24,12 @@ DestroySessionCompleteDelegate(FOnDestroySessionCompleteDelegate::CreateUObject(
 	}
 }
 
-void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType, bool bIsDedicatedServer)
+void UMGS_OnlineSubsystem::SetGameSettings(FString ServerName, int32 MaxPlayers, FString MatchType, bool bIsDedicatedServer)
 {
-	/*FName NewSettings = FName();
-	SessionSettings->Set(NewSettings, MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);*/
-
 	SessionSettings = MakeShareable(new FOnlineSessionSettings());
 	SessionSettings->NumPublicConnections = MaxPlayers;
 	SessionSettings->bIsLANMatch = !IsPlayerLoggedIn() ? true : false; // IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
-	SessionSettings->bIsDedicated = false; //bIsDedicatedServer;
+	SessionSettings->bIsDedicated = bIsDedicatedServer;
 	SessionSettings->bAllowJoinInProgress = true;
 	SessionSettings->bAllowJoinViaPresence = true;
 	SessionSettings->bShouldAdvertise = true;
@@ -42,18 +39,21 @@ void UMGS_OnlineSubsystem::SetGameSettings(int32 MaxPlayers, FString MatchType, 
 	SessionSettings->bAllowInvites = true;
 	SessionSettings->BuildUniqueId = 1;
 	SessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings->Set(FName("ServerName"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 }
 
 //*******************Creating Session**********************
-void UMGS_OnlineSubsystem::CreateGameSession(int32 MaxPlayers, FString MatchType)
+void UMGS_OnlineSubsystem::CreateGameSession(/*int32 MaxPlayers, FString MatchType*/)
 {
 	if (!SessionInterface) return;
 
 	if (auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession))
 	{
 		bCreateSessionOnDestroy = true;
-		LastMaxPlayers = MaxPlayers;
-		LastMatchType = MatchType;
+		LastMaxPlayers = SessionSettings->NumPublicConnections; //MaxPlayers;
+		FString GameType;
+		SessionSettings->Get(FName("ServerName"), GameType);
+		LastMatchType = GameType; // MatchType;
 
 		DestroyGameSession();
 	}
@@ -61,19 +61,11 @@ void UMGS_OnlineSubsystem::CreateGameSession(int32 MaxPlayers, FString MatchType
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Creating Game Session")), FColor::Blue);
 
 	CreateSessionHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
-	SetGameSettings(MaxPlayers, MatchType, SessionSettings->bIsDedicated);
-	/*SessionSettings = MakeShareable(new FOnlineSessionSettings());
-	SessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
-	SessionSettings->NumPublicConnections = MaxPlayers;
-	SessionSettings->bAllowJoinInProgress = true;
-	SessionSettings->bAllowJoinViaPresence = true;
-	SessionSettings->bShouldAdvertise = true;
-	SessionSettings->bUsesPresence = true;
-	SessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	SessionSettings->BuildUniqueId = 1;
-	SessionSettings->bUseLobbiesIfAvailable = true;
-	SessionSettings->bUseLobbiesVoiceChatIfAvailable = true;*/
-	
+	//FString GameServerName;
+	//SessionSettings->Get(FName("ServerName"), GameServerName);
+	////Session.SessionSettings.Get(FName("MatchType"), FoundGameType);
+	//SetGameSettings(GameServerName, MaxPlayers, MatchType, SessionSettings->bIsDedicated);
+		
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	const FUniqueNetId& LocalPlayerID = *LocalPlayer->GetPreferredUniqueNetId();
 
@@ -197,7 +189,7 @@ void UMGS_OnlineSubsystem::OnDestroySessionCompleted(FName SessionName, bool bWa
 	{
 		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Destroy Session Completed")), FColor::Green);
 		bCreateSessionOnDestroy = false;
-		CreateGameSession(LastMaxPlayers, LastMatchType);
+		CreateGameSession(/*LastMaxPlayers, LastMatchType*/);
 	}
 	MGSDestroySessionCompleted.Broadcast(bWasSuccessful);
 }

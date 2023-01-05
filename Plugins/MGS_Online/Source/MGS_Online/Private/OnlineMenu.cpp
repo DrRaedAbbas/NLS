@@ -119,9 +119,10 @@ void UOnlineMenu::HostButtonClicked()
 	
 	if (MGS_OnlineSubsystem)
 	{
-		MGS_OnlineSubsystem->SetGameSettings(MaxPlayers, MatchType/*, LevelPath*/, bIsDedicatedServer);
-		MGS_OnlineSubsystem->CreateGameSession(MaxPlayers, MatchType);
+		MGS_OnlineSubsystem->SetGameSettings(ServerName, MaxPlayers, MatchType/*, LevelPath*/, bIsDedicatedServer);
+		MGS_OnlineSubsystem->CreateGameSession(/*MaxPlayers, MatchType*/);
 	}
+	OnButtonReady.Broadcast(true);
 }
 
 void UOnlineMenu::JoingButtonClicked()
@@ -131,6 +132,7 @@ void UOnlineMenu::JoingButtonClicked()
 	if (!SessionSearchResult.IsValid())
 	{
 		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("No Games. Please try Find Game")), FColor::Red);
+		OnButtonReady.Broadcast(true);
 		return;
 	}
 
@@ -160,7 +162,6 @@ void UOnlineMenu::QuitButtonClicked()
 
 void UOnlineMenu::OnCreateSession(bool bWasSuccessful)
 {
-	OnButtonReady.Broadcast(true);
 	if (bWasSuccessful)
 	{
 		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Game Session created!")), FColor::Green);
@@ -168,6 +169,7 @@ void UOnlineMenu::OnCreateSession(bool bWasSuccessful)
 		if (UWorld* World = GetWorld())
 		{
 			LevelPath = LevelPath + FString(TEXT("?listen"));
+			OnButtonReady.Broadcast(true);
 			World->ServerTravel(LevelPath);
 			UnloadMenu();
 		}
@@ -175,6 +177,7 @@ void UOnlineMenu::OnCreateSession(bool bWasSuccessful)
 	else
 	{
 		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Session was not created!")), FColor::Red);
+		OnButtonReady.Broadcast(true);
 	}
 }
 
@@ -186,8 +189,8 @@ void UOnlineMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& Sessi
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Finding Game Sessions!")), FColor::Cyan);
 	for (auto Result : SessionResults)
 	{
-		/*if(Result.Session.NumOpenPublicConnections <= 0) continue;
-		if(Result.Session.NumOpenPublicConnections <= MaxPlayers) continue;*/
+		if(Result.Session.NumOpenPublicConnections <= 0) continue;
+		if(Result.Session.NumOpenPublicConnections <= MaxPlayers) continue;
 
 		FString FoundGameType;
 		Result.Session.SessionSettings.Get(FName("MatchType"), FoundGameType);
@@ -196,6 +199,7 @@ void UOnlineMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& Sessi
 		{
 			SessionSearchResult = Result;
 			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Game Session Found")), FColor::Green);
+			OnButtonReady.Broadcast(true);
 			break;
 		}
 	}
@@ -203,7 +207,6 @@ void UOnlineMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& Sessi
 
 void UOnlineMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 {
-	OnButtonReady.Broadcast(true);
 	if(IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get())
 	{
 		IOnlineSessionPtr SessionInterface = Subsystem->GetSessionInterface();
@@ -215,17 +218,20 @@ void UOnlineMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 			if (PlayerController)
 			{
 				PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+				OnButtonReady.Broadcast(true);
 				UnloadMenu();
 			}
 		}
 		else
 		{
 			MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("CANNOT Joing Game!")), FColor::Red);
+			OnButtonReady.Broadcast(true);
 		}
 	}
 	else
 	{
 		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Subsystem Does Not Exist!")), FColor::Red);
+		OnButtonReady.Broadcast(true);
 	}
 }
 
@@ -236,7 +242,6 @@ void UOnlineMenu::OnStartSession(bool bWasSuccessful)
 
 void UOnlineMenu::OnDestroySession(bool bWasSuccessful)
 {
-	OnButtonReady.Broadcast(true);
 	UWorld* World = GetWorld();
 	if (World)
 	{
@@ -250,6 +255,7 @@ void UOnlineMenu::OnDestroySession(bool bWasSuccessful)
 			if(APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController())
 			{
 				PlayerController->ClientReturnToMainMenuWithTextReason(FText());
+				OnButtonReady.Broadcast(true);
 				UnloadMenu();
 			}
 		}

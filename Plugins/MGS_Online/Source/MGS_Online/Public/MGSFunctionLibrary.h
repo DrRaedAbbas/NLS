@@ -14,4 +14,5 @@ class MGS_ONLINE_API UMGSFunctionLibrary : public UBlueprintFunctionLibrary
 public:
 	UFUNCTION(BlueprintCallable, Category = "MGS|Functions Library")
 	static FString DisplayDebugMessage(FString DebugMessage, FLinearColor MessageColor);
+
 };

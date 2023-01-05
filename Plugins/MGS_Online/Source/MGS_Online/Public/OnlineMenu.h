@@ -7,6 +7,7 @@
 #include "OnlineSessionSettings.h"
 #include "Blueprint/UserWidget.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "MGS_Enums.h"
 
 #include "OnlineMenu.generated.h"
 
@@ -27,6 +28,8 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "MGS")
 	void SaveGame();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
+	FString ServerName = FString("My MGS");
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
 	int32 MaxPlayers = 4;
 	UPROPERTY()
@@ -52,7 +55,7 @@ public:
 	FOnButtonReady OnButtonReady;
 
 private:
-	class UMGS_OnlineSubsystem* MGS_OnlineSubsystem;
+	UMGS_OnlineSubsystem* MGS_OnlineSubsystem;
 	class UMGSFunctionLibrary* MGSFunctionLibrary;
 
 	FOnlineSessionSearchResult SessionSearchResult;

@@ -5,14 +5,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
 
-#include "LobbyGameMode.generated.h"
+#include "BaseGameMode.generated.h"
 
 UCLASS()
-class MGS_ONLINE_API ALobbyGameMode : public AGameMode
+class MGS_ONLINE_API ABaseGameMode : public AGameMode
 {
 	GENERATED_BODY()
 
-	ALobbyGameMode();
+	ABaseGameMode();
 
 public:
 	virtual void PostLogin(APlayerController* NewPlayer) override;

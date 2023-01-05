@@ -1,17 +1,17 @@
 // Copy righted to RAED ABBAS 2023
 
 
-#include "LobbyGameMode.h"
+#include "BaseGameMode.h"
 
 #include "MGSFunctionLibrary.h"
 #include "GameFramework/GameStateBase.h"
 
-ALobbyGameMode::ALobbyGameMode()
+ABaseGameMode::ABaseGameMode()
 {
 	bUseSeamlessTravel = true;
 }
 
-void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
+void ABaseGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
@@ -19,18 +19,9 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	FString NumberOfPlayersString = FString(TEXT("***Number Of Players: ") + FString::FormatAsNumber(NumberOfCurrentPlayers));
 
 	MGSFunctionLibrary->DisplayDebugMessage(NumberOfPlayersString, FColor::Orange);
-
-	if (NumberOfCurrentPlayers == MaxPlayersAllowed)
-	{
-		if (UWorld* World = GetWorld())
-		{
-			LevelPath = LevelPath + FString(TEXT("?listen"));
-			World->ServerTravel(LevelPath);
-		}
-	}
 }
 
-void ALobbyGameMode::Logout(AController* Exiting)
+void ABaseGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
 
