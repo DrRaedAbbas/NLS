@@ -28,7 +28,7 @@ void UMGS_OnlineSubsystem::SetGameSettings(FString ServerName, int32 MaxPlayers,
 {
 	SessionSettings = MakeShareable(new FOnlineSessionSettings());
 	SessionSettings->NumPublicConnections = MaxPlayers;
-	SessionSettings->bIsLANMatch = !IsPlayerLoggedIn() ? true : false; // IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+	SessionSettings->bIsLANMatch = /*!IsPlayerLoggedIn() ? true : false;*/ IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
 	SessionSettings->bIsDedicated = bIsDedicatedServer;
 	SessionSettings->bAllowJoinInProgress = true;
 	SessionSettings->bAllowJoinViaPresence = true;
@@ -40,6 +40,9 @@ void UMGS_OnlineSubsystem::SetGameSettings(FString ServerName, int32 MaxPlayers,
 	SessionSettings->BuildUniqueId = 1;
 	SessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	SessionSettings->Set(FName("ServerName"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings->Set(SEARCH_KEYWORDS, FString("Nice Lobby"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings->Set(SEARCH_LOBBIES, FString("LOBBYSEARCH"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings->Set(SETTING_GAMEMODE, FString("COOP"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 }
 
 //*******************Creating Session**********************
@@ -93,7 +96,7 @@ void UMGS_OnlineSubsystem::FindGameSessions(int32 MaxSearchResults)
 	FindSessionsHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	SessionSearch->MaxSearchResults = MaxSearchResults;
-	SessionSearch->bIsLanQuery = !IsPlayerLoggedIn() ? true : false; //IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+	SessionSearch->bIsLanQuery = /*!IsPlayerLoggedIn() ? true : false;*/ IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 	SessionSearch->QuerySettings.Set(SEARCH_LOBBIES, true, EOnlineComparisonOp::Equals);
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
