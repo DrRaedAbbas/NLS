@@ -24,7 +24,8 @@
 //};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMGSCreateSessionCompleted, bool, bWasSuccessful);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FMGSFindSessionsCompleted, const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
+//DECLARE_MULTICAST_DELEGATE_TwoParams(FMGSFindSessionsCompleted, const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMGSFindSessionsCompleted, const TArray<FBlueprintSessionResult>&, SessionResults, bool, bWasSuccessful);
 DECLARE_MULTICAST_DELEGATE_OneParam(FMGSJoinSessionCompleted, EOnJoinSessionCompleteResult::Type Result);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMGSStartSessionCompleted, bool, bWasSuccessful);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMGSDestroySessionCompleted, bool, bWasSuccessful);
@@ -72,23 +73,31 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
 	void FindGameSessions(int32 MaxSearchResults = 10000);
-	void JoinGameSession(const FOnlineSessionSearchResult& SessionSearchResult);
+	void JoinGameSession(const FOnlineSessionSearchResult& SessionSearchResult /*const FBlueprintSessionResult& SearchResult*/);
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
 	void StartGameSession();
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
 	void DestroyGameSession();
 
-	UPROPERTY(BlueprintReadOnly, Category="MGS||Online")
+	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
+	void TravelToMap(FString MapPath);
+	/**
+	 * Find all available game sessions.
+	 * @param MaxSearchResults The maximum number of search results. Set to a high value during testing/debug.
+	 */
+
+	UPROPERTY(BlueprintReadOnly, Category="MGS|Online")
 	TArray<FBlueprintSessionResult> SessionSearchResults;
 
 	//Custom delegates to broadcast
-	UPROPERTY(BlueprintAssignable, Category = "MGS||Online||Delegates")
+	UPROPERTY(BlueprintAssignable, Category = "MGS|Online|Delegates")
 	FMGSCreateSessionCompleted MGSCreateSessionCompleted;
+	UPROPERTY(BlueprintAssignable, Category = "MGS|Online|Delegates")
 	FMGSFindSessionsCompleted MGSFindSessionsCompleted;
 	FMGSJoinSessionCompleted MGSJoinSessionCompleted;
-	UPROPERTY(BlueprintAssignable, Category = "MGS||Online||Delegates")
+	UPROPERTY(BlueprintAssignable, Category = "MGS|Online|Delegates")
 	FMGSStartSessionCompleted MGSStartSessionCompleted;
-	UPROPERTY(BlueprintAssignable, Category = "MGS||Online||Delegates")
+	UPROPERTY(BlueprintAssignable, Category = "MGS|Online|Delegates")
 	FMGSDestroySessionCompleted MGSDestroySessionCompleted;
 
 	//EOS

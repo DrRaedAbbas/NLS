@@ -8,7 +8,7 @@
 
 ABaseGameMode::ABaseGameMode()
 {
-	bUseSeamlessTravel = true;
+	//bUseSeamlessTravel = true;
 }
 
 void ABaseGameMode::PostLogin(APlayerController* NewPlayer)

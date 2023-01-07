@@ -27,6 +27,8 @@ public:
 	void UnloadMenu();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "MGS")
 	void SaveGame();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "MGS")
+	void LoadGame();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
 	FString ServerName = FString("My MGS");
@@ -67,7 +69,8 @@ protected:
 	//Custom delegates callbacks
 	UFUNCTION()
 	void OnCreateSession(bool bWasSuccessful);
-	void OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
+	UFUNCTION()
+	void OnFindSessions(const TArray<FBlueprintSessionResult>& SessionResults, bool bWasSuccessful);
 	void OnJoinSession(EOnJoinSessionCompleteResult::Type Result);
 	UFUNCTION()
 	void OnStartSession(bool bWasSuccessful);

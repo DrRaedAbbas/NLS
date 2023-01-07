@@ -2,10 +2,12 @@
 
 
 #include "MGS_OnlineSubsystem.h"
+
 #include "MGSFunctionLibrary.h"
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystemUtils.h"
 #include "OnlineSubsystem.h"
+#include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 
 UMGS_OnlineSubsystem::UMGS_OnlineSubsystem():
@@ -49,7 +51,7 @@ void UMGS_OnlineSubsystem::SetGameSettings(FString ServerName, int32 MaxPlayers,
 void UMGS_OnlineSubsystem::CreateGameSession(/*int32 MaxPlayers, FString MatchType*/)
 {
 	if (!SessionInterface) return;
-
+	SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionHandle);
 	if (auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession))
 	{
 		bCreateSessionOnDestroy = true;
@@ -104,20 +106,21 @@ void UMGS_OnlineSubsystem::FindGameSessions(int32 MaxSearchResults)
 	if (!SessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef()))
 	{
 		SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(FindSessionsHandle);
-		MGSFindSessionsCompleted.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
+		MGSFindSessionsCompleted.Broadcast({}, false);
 	}
 }
 void UMGS_OnlineSubsystem::OnFindSessionsCompleted(bool bWasSuccessful)
 {
 	if (SessionInterface) SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(FindSessionsHandle);
-	if (SessionSearch->SearchResults.Num() <= 0)
+	if (SessionSearch->SearchResults.IsEmpty())
 	{
-		MGSFindSessionsCompleted.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
+		MGSFindSessionsCompleted.Broadcast({}, false);
 		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("No Session Found!")), FColor::Red);
 		return;
 	}
 	
 	TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
+	SessionSearchResults.Empty();
 	for (FOnlineSessionSearchResult SearchResult : SearchResults)
 	{
 		FBlueprintSessionResult BPResult;
@@ -125,14 +128,20 @@ void UMGS_OnlineSubsystem::OnFindSessionsCompleted(bool bWasSuccessful)
 		SessionSearchResults.Add(BPResult);
 	}
 	
-	MGSFindSessionsCompleted.Broadcast(SearchResults, bWasSuccessful);
+	MGSFindSessionsCompleted.Broadcast(SessionSearchResults, bWasSuccessful);
 
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Find Session Completed")), FColor::Green);
 }
 
 //*******************Joining Session***********************
-void UMGS_OnlineSubsystem::JoinGameSession(const FOnlineSessionSearchResult& SessionSearchResult)
+void UMGS_OnlineSubsystem::JoinGameSession(const FOnlineSessionSearchResult& SessionSearchResult /*const FBlueprintSessionResult& SearchResult*/)
 {
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (Subsystem)
+	{
+		SessionInterface = Subsystem->GetSessionInterface();
+	}
+
 	if (!SessionInterface.IsValid())
 	{
 		MGSJoinSessionCompleted.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
@@ -140,6 +149,8 @@ void UMGS_OnlineSubsystem::JoinGameSession(const FOnlineSessionSearchResult& Ses
 	}
 
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Joining Game Session")), FColor::Blue);
+
+	//SessionSearchResult = SearchResult.OnlineResult;
 
 	JoinSessionHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
@@ -190,11 +201,25 @@ void UMGS_OnlineSubsystem::OnDestroySessionCompleted(FName SessionName, bool bWa
 	}
 	if (bWasSuccessful && bCreateSessionOnDestroy)
 	{
-		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Destroy Session Completed")), FColor::Green);
 		bCreateSessionOnDestroy = false;
 		CreateGameSession(/*LastMaxPlayers, LastMatchType*/);
 	}
+	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Destroy Session Completed")), FColor::Green);
 	MGSDestroySessionCompleted.Broadcast(bWasSuccessful);
+}
+
+//******************Travel To Map********************
+void UMGS_OnlineSubsystem::TravelToMap(FString MapPath)
+{
+	MapPath = MapPath + FString(TEXT("?listen"));
+	if (UWorld* World = GetWorld())
+	{
+		/*if (AGameModeBase* GameMode = World->GetAuthGameMode())
+		{
+			GameMode->bUseSeamlessTravel = true;*/
+			World->ServerTravel(MapPath);
+		//}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
