@@ -14,17 +14,7 @@
 
 #include "MGS_OnlineSubsystem.generated.h"
 
-//UENUM(BlueprintType)
-//enum class EGameType : uint8
-//{
-//	NONE,
-//	FreeForAll UMETA(DisplayName = "Free For All"),
-//	DeathMatch UMETA(DisplayName = "Death Match"),
-//	TeamDeathMatch UMETA(DisplayName = "Team Death Match")
-//};
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMGSCreateSessionCompleted, bool, bWasSuccessful);
-//DECLARE_MULTICAST_DELEGATE_TwoParams(FMGSFindSessionsCompleted, const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMGSFindSessionsCompleted, const TArray<FBlueprintSessionResult>&, SessionResults, bool, bWasSuccessful);
 DECLARE_MULTICAST_DELEGATE_OneParam(FMGSJoinSessionCompleted, EOnJoinSessionCompleteResult::Type Result);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMGSStartSessionCompleted, bool, bWasSuccessful);
@@ -73,7 +63,7 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
 	void FindGameSessions(int32 MaxSearchResults = 10000);
-	void JoinGameSession(const FOnlineSessionSearchResult& SessionSearchResult /*const FBlueprintSessionResult& SearchResult*/);
+	void JoinGameSession(const FOnlineSessionSearchResult& SessionSearchResult);
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
 	void StartGameSession();
 	UFUNCTION(BlueprintCallable, Category = "MGS|Online")
@@ -150,9 +140,7 @@ public:
 	TArray<FString> InputDevices;
 	UPROPERTY(BlueprintReadWrite, Category = "MGS|EOS|vChat")
 	TArray<FString> OutputDevices;
-	//UPROPERTY(BlueprintReadWrite, Category = "MGS|EOS|vChat")
 	TArray<FVoiceChatDeviceInfo> InputDeviceInfos;
-	//UPROPERTY(BlueprintReadWrite, Category = "MGS|EOS|vChat")
 	TArray<FVoiceChatDeviceInfo> OutputDeviceInfos;
 
 	UPROPERTY(BlueprintAssignable, Category = "MGS|EOS|Lobby|Delegates")
@@ -202,7 +190,6 @@ private:
 	FOnLoginCompleteDelegate OnLoginCompleteDelegate;
 	FDelegateHandle LoginHandle;
 	FOnVoiceChatLoginCompleteDelegate OnChatLoginCompleteDelegate;
-	//FDelegateHandle vChatLoginHandle;
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
 	FDelegateHandle CreateSessionHandle;
 	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
@@ -213,8 +200,6 @@ private:
 	FDelegateHandle StartSessionHandle;
 	FOnDestroySessionCompleteDelegate DestroySessionCompleteDelegate;
 	FDelegateHandle DestroySessionHandle;
-	/*FOnlineStatsUpdateStatsComplete StatsUpdateCompleteDelegate;
-	FDelegateHandle StatsUpdateHandle;*/
 
 	bool bCreateSessionOnDestroy = false;
 	int32 LastMaxPlayers;

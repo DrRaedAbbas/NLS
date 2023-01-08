@@ -48,17 +48,17 @@ void UMGS_OnlineSubsystem::SetGameSettings(FString ServerName, int32 MaxPlayers,
 }
 
 //*******************Creating Session**********************
-void UMGS_OnlineSubsystem::CreateGameSession(/*int32 MaxPlayers, FString MatchType*/)
+void UMGS_OnlineSubsystem::CreateGameSession()
 {
 	if (!SessionInterface) return;
 	SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionHandle);
 	if (auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession))
 	{
 		bCreateSessionOnDestroy = true;
-		LastMaxPlayers = SessionSettings->NumPublicConnections; //MaxPlayers;
+		LastMaxPlayers = SessionSettings->NumPublicConnections;
 		FString GameType;
 		SessionSettings->Get(FName("ServerName"), GameType);
-		LastMatchType = GameType; // MatchType;
+		LastMatchType = GameType;
 
 		DestroyGameSession();
 	}
@@ -66,11 +66,7 @@ void UMGS_OnlineSubsystem::CreateGameSession(/*int32 MaxPlayers, FString MatchTy
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Creating Game Session")), FColor::Blue);
 
 	CreateSessionHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
-	//FString GameServerName;
-	//SessionSettings->Get(FName("ServerName"), GameServerName);
-	////Session.SessionSettings.Get(FName("MatchType"), FoundGameType);
-	//SetGameSettings(GameServerName, MaxPlayers, MatchType, SessionSettings->bIsDedicated);
-		
+	
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	const FUniqueNetId& LocalPlayerID = *LocalPlayer->GetPreferredUniqueNetId();
 
@@ -98,7 +94,7 @@ void UMGS_OnlineSubsystem::FindGameSessions(int32 MaxSearchResults)
 	FindSessionsHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	SessionSearch->MaxSearchResults = MaxSearchResults;
-	SessionSearch->bIsLanQuery = /*!IsPlayerLoggedIn() ? true : false;*/ IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+	SessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 	SessionSearch->QuerySettings.Set(SEARCH_LOBBIES, true, EOnlineComparisonOp::Equals);
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
@@ -149,9 +145,7 @@ void UMGS_OnlineSubsystem::JoinGameSession(const FOnlineSessionSearchResult& Ses
 	}
 
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Joining Game Session")), FColor::Blue);
-
-	//SessionSearchResult = SearchResult.OnlineResult;
-
+	
 	JoinSessionHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 
@@ -202,7 +196,7 @@ void UMGS_OnlineSubsystem::OnDestroySessionCompleted(FName SessionName, bool bWa
 	if (bWasSuccessful && bCreateSessionOnDestroy)
 	{
 		bCreateSessionOnDestroy = false;
-		CreateGameSession(/*LastMaxPlayers, LastMatchType*/);
+		CreateGameSession();
 	}
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Destroy Session Completed")), FColor::Green);
 	MGSDestroySessionCompleted.Broadcast(bWasSuccessful);
@@ -214,11 +208,7 @@ void UMGS_OnlineSubsystem::TravelToMap(FString MapPath)
 	MapPath = MapPath + FString(TEXT("?listen"));
 	if (UWorld* World = GetWorld())
 	{
-		/*if (AGameModeBase* GameMode = World->GetAuthGameMode())
-		{
-			GameMode->bUseSeamlessTravel = true;*/
-			World->ServerTravel(MapPath);
-		//}
+		World->ServerTravel(MapPath);
 	}
 }
 
@@ -295,8 +285,7 @@ void UMGS_OnlineSubsystem::LoginWithEOS(FString ID, FString Token, FString Login
 		Credentials.Id = "";
 		Credentials.Token = "";
 		Credentials.Type = "accountportal";
-
-		//IdentityPtr->OnLoginCompleteDelegates->AddUObject(this, &ThisClass::OnLoginWithEOSCompleted);
+		
 		if (!IdentityPtr->Login(0, Credentials))
 		{
 			IdentityPtr->ClearOnLoginCompleteDelegate_Handle(0, LoginHandle);
@@ -341,48 +330,13 @@ void UMGS_OnlineSubsystem::LoginEOSCompleted(bool bSuccess)
 	{
 		FString vChatUserName = vChatUser->GetLoggedInPlayerName();
 		UE_LOG(LogTemp, Warning, TEXT("vChat User: &s"), *vChatUserName);
-
-		/*vChatUserID = IdentityPtr->GetUniquePlayerId(0);
-		FPlatformUserId PlatformUserID = IdentityPtr->GetPlatformUserIdFromUniqueNetId(*vChatUserID);
-		vChatUser->Login(PlatformUserID, vChatUserID->ToString(), TEXT(""), OnChatLoginCompleteDelegate);*/
 	}
 }
 
 //*******************EOS Voice Chat***************************
 void UMGS_OnlineSubsystem::LoginWithEOSvChat()
 {
-	//EOSvChatLoginCompleted.AddDynamic(this, &ThisClass::LoginEOSvChatCompleted);
-	//IOnlineSubsystem* SubsystemRef = Online::GetSubsystem(this->GetWorld());
-	//if (SubsystemRef)
-	//{
-	//	IdentityPtr = SubsystemRef->GetIdentityInterface();
-	//	if (!IdentityPtr.IsValid())
-	//	{
-	//		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Identity Pointer Not valid!")), FColor::Red);
-	//		EOSvChatLoginCompleted.Broadcast(false);
-	//		return;
-	//	}
-	//	if (!IsPlayerLoggedIn())
-	//	{
-	//		EOSvChatLoginCompleted.Broadcast(false);
-	//		return;
-	//	}
-	//	
-	//	IVoiceChat* vChatRef = IVoiceChat::Get();
-	//	if (vChatRef)
-	//	{
-	//		vChatUser = vChatRef->CreateUser();
-	//	}
-
-	//	if (vChatUser == nullptr)
-	//	{
-	//		EOSvChatLoginCompleted.Broadcast(false);
-	//		return;
-	//	}
-	//	/*TSharedPtr<const FUniqueNetId>*/ vChatUserID = IdentityPtr->GetUniquePlayerId(0);
-	//	FPlatformUserId PlatformUserID = IdentityPtr->GetPlatformUserIdFromUniqueNetId(*vChatUserID);
-	//	vChatUser->Login(PlatformUserID, vChatUserID->ToString(), TEXT(""), OnChatLoginCompleteDelegate);
-	//}
+	
 }
 void UMGS_OnlineSubsystem::OnLoginWithEOSvChatCompleted(const FString& PlayerName, const FVoiceChatResult& Result)
 {
@@ -424,15 +378,12 @@ void UMGS_OnlineSubsystem::GetInputOutput(TArray<FString>& InputDeviceNames, TAr
 		for (auto InputDevice : vChatUser->GetAvailableInputDeviceInfos())
 		{
 			InputDeviceInfos.Add(InputDevice);
-			//InputDeviceNames.Add(InputDevice.DisplayName);
 		}
 		for (auto OutputDevice : vChatUser->GetAvailableOutputDeviceInfos())
 		{
 			OutputDeviceInfos.Add(OutputDevice);
-			//OutputDeviceNames.Add(OutputDevice.DisplayName);
 		}
-		/*InputDevices = InputDeviceNames;
-		OutputDevices = OutputDeviceNames;*/
+		
 		int32 DevicID = 0;
 		for (FVoiceChatDeviceInfo InputDeviceInfo : InputDeviceInfos)
 		{
@@ -534,7 +485,6 @@ void UMGS_OnlineSubsystem::GetStats(TArray<FString> StatNames)
 		TArray<TSharedRef<const FUniqueNetId>> UserVars;
 		UserVars.Add(IdentityPtr->GetUniquePlayerId(0).ToSharedRef());
 		StatPtr->QueryStats(IdentityPtr->GetUniquePlayerId(0).ToSharedRef(), UserVars, StatNames, FOnlineStatsQueryUsersStatsComplete::CreateUObject(this, &ThisClass::OnGetStatsCompleted));
-		//StatPtr->GetStats(IdentityPtr->GetUniquePlayerId(0).ToSharedRef());
 	}
 }
 void UMGS_OnlineSubsystem::OnGetStatsCompleted(const FOnlineError& Result, const TArray<TSharedRef<const FOnlineStatsUserStats>>& UserStats)
@@ -548,7 +498,6 @@ void UMGS_OnlineSubsystem::OnGetStatsCompleted(const FOnlineError& Result, const
 				FString KeyName = Stat.Key;
 				int32 ReturnedValue;
 				Stat.Value.GetValue(ReturnedValue);
-				//UE_LOG(LogTemp, Warning, TEXT("Stats %s value is %d"), *KeyName, ReturnedValue);
 				MGSFunctionLibrary->DisplayDebugMessage("Stat "+ KeyName+ " value is: " + FString::FromInt(ReturnedValue), FColor::Green);
 			}
 		}

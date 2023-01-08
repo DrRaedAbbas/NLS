@@ -45,15 +45,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MGS|Lobby Settiongs")
 	bool IsInGameMenu = false;
 
-	UFUNCTION()
-	void HostButtonClicked();
-	UFUNCTION()
-	void JoingButtonClicked();
-	UFUNCTION()
-	void FindButtonClicked();
-	UFUNCTION()
-	void QuitButtonClicked();
-
 	FOnButtonReady OnButtonReady;
 
 private:
