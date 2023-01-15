@@ -84,6 +84,11 @@ void UMenuButton::OnButtonClicked()
 			}
 			case EButtonType::QuitButton:
 			{
+				MGS_OnlineSubsystem->MGSCreateSessionCompleted.RemoveDynamic(this, &ThisClass::OnCreateSessionCompleted);
+				MGS_OnlineSubsystem->MGSJoinSessionCompleted.RemoveAll(this);
+				MGS_OnlineSubsystem->MGSFindSessionsCompleted.RemoveDynamic(this, &ThisClass::OnFindSessionCompleted);
+				MGS_OnlineSubsystem->MGSStartSessionCompleted.RemoveDynamic(this, &ThisClass::OnStartSessionCompleted);
+				MGS_OnlineSubsystem->MGSDestroySessionCompleted.RemoveDynamic(this, &ThisClass::OnDestroySessionCompleted);
 				MGS_OnlineSubsystem->DestroyGameSession();
 				break;
 			}

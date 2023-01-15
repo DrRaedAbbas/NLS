@@ -81,6 +81,11 @@ void UOnlineMenu::UnloadMenu()
 			PlayerController->SetShowMouseCursor(false);
 			SaveGame();
 		}
+		MGS_OnlineSubsystem->MGSCreateSessionCompleted.RemoveDynamic(this, &ThisClass::OnCreateSession);
+		MGS_OnlineSubsystem->MGSJoinSessionCompleted.RemoveAll(this);
+		MGS_OnlineSubsystem->MGSFindSessionsCompleted.RemoveDynamic(this, &ThisClass::OnFindSessions);
+		MGS_OnlineSubsystem->MGSStartSessionCompleted.RemoveDynamic(this, &ThisClass::OnStartSession);
+		MGS_OnlineSubsystem->MGSDestroySessionCompleted.RemoveDynamic(this, &ThisClass::OnDestroySession);
 	}
 	RemoveFromParent();
 }
@@ -146,6 +151,8 @@ void UOnlineMenu::OnStartSession(bool bWasSuccessful)
 
 void UOnlineMenu::OnDestroySession(bool bWasSuccessful)
 {
+	if (MGS_OnlineSubsystem->bCreateSessionOnDestroy) return;
+	UnloadMenu();
 	UWorld* World = GetWorld();
 	if (World)
 	{
@@ -159,7 +166,6 @@ void UOnlineMenu::OnDestroySession(bool bWasSuccessful)
 			if(APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController())
 			{
 				PlayerController->ClientReturnToMainMenuWithTextReason(FText());
-				UnloadMenu();
 			}
 		}
 	}

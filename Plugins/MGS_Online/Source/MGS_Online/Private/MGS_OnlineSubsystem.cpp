@@ -50,6 +50,7 @@ void UMGS_OnlineSubsystem::SetGameSettings(FString ServerName, int32 MaxPlayers,
 //*******************Creating Session**********************
 void UMGS_OnlineSubsystem::CreateGameSession()
 {
+	bCreateSessionOnDestroy = false;
 	if (!SessionInterface) return;
 	SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionHandle);
 	if (auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession))
@@ -62,18 +63,45 @@ void UMGS_OnlineSubsystem::CreateGameSession()
 
 		DestroyGameSession();
 	}
-
-	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Creating Game Session")), FColor::Blue);
-
-	CreateSessionHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
-	
-	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-	const FUniqueNetId& LocalPlayerID = *LocalPlayer->GetPreferredUniqueNetId();
-
-	if (!SessionInterface->CreateSession(LocalPlayerID, NAME_GameSession, *SessionSettings))
+	else
 	{
-		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionHandle);
-		MGSCreateSessionCompleted.Broadcast(false);
+		MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Creating Game Session")), FColor::Blue);
+
+		CreateSessionHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
+
+		if (const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController())
+		{
+			if (IsPlayerLoggedIn())
+			{
+				const FUniqueNetId& LocalPlayerID = *LocalPlayer->GetPreferredUniqueNetId();
+				if (!LocalPlayerID.IsValid())
+				{
+					SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionHandle);
+					MGSCreateSessionCompleted.Broadcast(false);
+					return;
+				}
+				if (!SessionInterface->CreateSession(LocalPlayerID, NAME_GameSession, *SessionSettings))
+				{
+					SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionHandle);
+					MGSCreateSessionCompleted.Broadcast(false);
+				}
+				return;
+			}
+
+			SessionInterface->CreateSession(0, NAME_GameSession, *SessionSettings);
+
+			/*if (!LocalPlayerID.IsValid())
+			{
+				SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionHandle);
+				MGSCreateSessionCompleted.Broadcast(false);
+				return;
+			}
+			if (!SessionInterface->CreateSession(LocalPlayerID, NAME_GameSession, *SessionSettings))
+			{
+				SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionHandle);
+				MGSCreateSessionCompleted.Broadcast(false);
+			}*/
+		}
 	}
 }
 void UMGS_OnlineSubsystem::OnCreateSessionCompleted(FName SessionName, bool bWasSuccessful)
@@ -193,13 +221,14 @@ void UMGS_OnlineSubsystem::OnDestroySessionCompleted(FName SessionName, bool bWa
 	{
 		SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionHandle);
 	}
-	if (bWasSuccessful && bCreateSessionOnDestroy)
-	{
-		bCreateSessionOnDestroy = false;
-		CreateGameSession();
-	}
 	MGSFunctionLibrary->DisplayDebugMessage(FString(TEXT("Destroy Session Completed")), FColor::Green);
 	MGSDestroySessionCompleted.Broadcast(bWasSuccessful);
+
+	if (bWasSuccessful && bCreateSessionOnDestroy)
+	{
+		/*bCreateSessionOnDestroy = false;*/
+		CreateGameSession();
+	}
 }
 
 //******************Travel To Map********************

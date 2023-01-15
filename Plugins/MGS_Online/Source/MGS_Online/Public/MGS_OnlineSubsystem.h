@@ -90,6 +90,8 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "MGS|Online|Delegates")
 	FMGSDestroySessionCompleted MGSDestroySessionCompleted;
 
+	UPROPERTY()
+	bool bCreateSessionOnDestroy = false;
 	//EOS
 	/**
 	 * To login using EOS.
@@ -201,7 +203,6 @@ private:
 	FOnDestroySessionCompleteDelegate DestroySessionCompleteDelegate;
 	FDelegateHandle DestroySessionHandle;
 
-	bool bCreateSessionOnDestroy = false;
 	int32 LastMaxPlayers;
 	FString LastMatchType;
 

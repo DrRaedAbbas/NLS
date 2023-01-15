@@ -36,6 +36,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	AimItem(false);
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
